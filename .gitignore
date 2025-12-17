@@ -1,0 +1,26 @@
+.env
+
+#Python 
+backend/venv/
+backend/app/__pycache__/
+backend/.env
+backend/*.env
+__pycache__/
+*.pyc
+
+#Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env
+
+# OS
+.DS_Store
+
+# Audio / temp
+*.mp3
+*.wav
+
+# IDE
+.vscode/
+.idea/

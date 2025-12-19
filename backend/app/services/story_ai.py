@@ -24,6 +24,7 @@ SUPPORTED_AUDIO_TAGS = [
     "nervously",
     "sarcastically"
 ]
+
 MODEL_NAME = "gemini-2.5-flash-lite"
 
 
@@ -37,6 +38,7 @@ You must:
 - Understand emotional shifts
 - Detect tension, relief, calm, excitement
 - Decide if a short audio performance cue is helpful
+- Decide who is speaking (narrator, male character, or female character)
 
 Important rules:
 - Audio cues are OPTIONAL
@@ -44,6 +46,11 @@ Important rules:
 - Do NOT overuse cues
 - Use cues only when emotion clearly changes
 - Think like a voice actor, not a machine
+- Do NOT add explanations, comments, or extra text outside the JSON.
+
+CRITICAL RULE:
+- Always return exactly ONE JSON object
+- If the text contains multiple sentences or roles, return the configuration for the DOMINANT sentence only
 """
 
 SCHEMA_DESCRIPTION = f"""
@@ -51,6 +58,7 @@ Return JSON in this exact format:
 
 {{
   "scene_type": "dialogue | narration | inner_monologue | action",
+  "speaker_role": "narrator | male_character | female_character",
   "emotion": "calm | tense | romantic | anxious | dramatic | relieved | excited | sad | angry",
   "intensity": 1-5,
   "pace": "slow | medium | fast",
@@ -90,7 +98,11 @@ Text:
 
         json_start = raw_text.find("{")
         json_end = raw_text.rfind("}") + 1
+        if json_start == -1 or json_end == -1:
+            raise ValueError("No JSON object found in Gemini response")
         json_str = raw_text[json_start:json_end]
+        print(f"Gemini raw response: {raw_text}")
+
 
         data = json.loads(json_str)
         data["intensity"] = int(data["intensity"])
@@ -111,6 +123,7 @@ def _fallback_config(reader_feedback: str | None):
 
     return NarrationConfig(
         scene_type="narration",
+        speaker_role="narrator",
         emotion=emotion,
         intensity=intensity,
         pace="medium",

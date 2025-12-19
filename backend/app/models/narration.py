@@ -11,6 +11,7 @@ class NarrationRequest(BaseModel):
 
 class NarrationConfig(BaseModel):
     scene_type: str
+    speaker_role: str
     emotion: str
     intensity: int
     pace: str

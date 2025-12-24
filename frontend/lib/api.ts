@@ -14,8 +14,8 @@ export async function narrateText(
   });
 
   if (!res.ok) {
-    throw new Error("Narration failed");
+    const t = res.text().catch(() => "");
+    throw new Error("Narration failed: " + t || res.statusText);
   }
-
   return res.json();
 }

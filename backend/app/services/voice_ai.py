@@ -1,39 +1,47 @@
 import base64
-import re 
-
-from elevenlabs.client import ElevenLabs
+import time
 
 from app.config import ELEVENLABS_API_KEY
+from elevenlabs.client import ElevenLabs
+from elevenlabs.core.api_error import ApiError
 
 client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
 VOICE_IDS = {
-    "narrator": "BIvP0GN1cAtSRTxNHnWS", # Jane
-    "male_character": "TX3LPaxmHKxFdv7VOQHJ", #Liam
-    "female_character": "cgSgspJ2msm6clMCkdW9" #Jessica 
+    "narrator": "BIvP0GN1cAtSRTxNHnWS",  # Jane
+    "male_character": "TX3LPaxmHKxFdv7VOQHJ",  # Liam
+    "female_character": "cgSgspJ2msm6clMCkdW9",  # Jessica
 }
 
-# Identify quoted text for voice handling
-QUOTE_PATTERN = re.compile(r'(".*?")')
 
-def _split_by_quotes(text):
+def _tts_with_retry(
+    client,
+    *,
+    voice_id,
+    model_id,
+    text,
+    voice_settings,
+    retries=2,
+    delay=0.5,
+):
     """
-    Splits text into quoted and non-quoted segments.
-    Keeps the quotes in the result.
+    Wrapper for ElevenLabs TTS with retry logic.
     """
-    parts = QUOTE_PATTERN.split(text)
-    return [p for p in parts if p.strip()]
+    for attempt in range(retries + 1):
+        try:
+            return client.text_to_speech.convert_with_timestamps(
+                voice_id=voice_id,
+                model_id=model_id,
+                text=text,
+                voice_settings=voice_settings,
+                apply_text_normalization="on",
+            )
+        except ApiError:
+            if attempt >= retries:
+                raise
+            print(f" ElevenLabs error, retrying ({attempt + 1}/{retries})...")
+            time.sleep(delay)
 
-def resolve_voice_for_segment(segment: str, config):
-    """
-    Decide which voice to use for a given text segment.
-    """
-    if segment.startswith('"') and segment.endswith('"'):
-        # Dialogue → use character voice
-        return config.speaker_role
-    else:
-        # Narration → always narrator
-        return "narrator"
 
 def _select_voice_id(config):
     """
@@ -41,6 +49,7 @@ def _select_voice_id(config):
     """
 
     return VOICE_IDS.get(config.speaker_role, VOICE_IDS["narrator"])
+
 
 def _map_voice_settings(config):
     """
@@ -67,7 +76,7 @@ def _map_voice_settings(config):
 
 def _shape_text(text: str, config):
     """
-    Shape narration text using actor-style cues.
+    Shape narration text using voice-cues.
     """
 
     shaped_text = text
@@ -84,61 +93,39 @@ def _shape_text(text: str, config):
 
     return shaped_text
 
-"""
+
 def synthesize_voice(text: str, narration_config):
-    
-    Generate speech audio using ElevenLabs API.
-    Returns base64-encoded audio bytes.
-    
-
-    if not ELEVENLABS_API_KEY:
-        raise RuntimeError("ElevenLabs API key mising.")
-
-    voice_settings = _map_voice_settings(narration_config)
-
-    # For better speech synthesis
-    enriched_text = _shape_text(text, narration_config)
-
-    audio_generator = client.text_to_speech.convert(
-        voice_id=_select_voice_id(narration_config),
-        model_id="eleven_v3",
-        text=enriched_text,
-        voice_settings=voice_settings,
-    )
-
-    audio_bytes = b"".join(audio_generator)
-
-    return base64.b64encode(audio_bytes).decode("utf-8")
-"""
-def synthesize_voice(text: str, narration_config):
+    """
+    Returns:
+    {
+      audio: base64 audio,
+      alignment: normalized character timestamps
+    }
+    """
     if not ELEVENLABS_API_KEY:
         raise RuntimeError("ElevenLabs API key missing.")
 
-    segments = _split_by_quotes(text)
-    final_audio = b""
+    voice_id = VOICE_IDS.get(narration_config.speaker_role, VOICE_IDS["narrator"])
 
-    for segment in segments:
-        role = resolve_voice_for_segment(segment, narration_config)
+    voice_settings = _map_voice_settings(narration_config)
 
-        voice_id = VOICE_IDS.get(role, VOICE_IDS["narrator"])
-        voice_settings = _map_voice_settings(narration_config)
+    shaped_text = _shape_text(text, narration_config)
 
-        shaped_text = segment.strip()
+    response = _tts_with_retry(
+        client,
+        voice_id=voice_id,
+        model_id="eleven_v3",
+        text=shaped_text,
+        voice_settings=voice_settings,
+    )
 
-        # Apply audio tag ONLY once per chunk, and only to dialogue
-        if (
-            narration_config.audio_tag != "none"
-            and role != "narrator"
-        ):
-            shaped_text = f"[{narration_config.audio_tag}]\n{shaped_text}"
+    audio_base64 = response.audio_base_64
+    alignment = response.normalized_alignment
 
-        audio_generator = client.text_to_speech.convert(
-            voice_id=voice_id,
-            model_id="eleven_v3",
-            text=shaped_text,
-            voice_settings=voice_settings,
-        )
+    duration = alignment.character_end_times_seconds[-1]
 
-        final_audio += b"".join(audio_generator)
-
-    return base64.b64encode(final_audio).decode("utf-8")
+    return {
+        "audio_bytes": base64.b64decode(audio_base64),
+        "duration": duration,
+        "role": narration_config.speaker_role,
+    }

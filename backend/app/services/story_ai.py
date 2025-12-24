@@ -38,6 +38,12 @@ You must:
 - Detect dialogue and identify speaker roles
 - Decide where a short audio performance cue is helpful
 
+CRITICAL SEGMENTATION RULES:
+- Never split a word across segments
+- Never split inside quotation marks
+- Prefer sentence boundaries (., ?, !) over mid-word or mid-phrase breaks
+- If unsure, extend the segment rather than cutting early
+
 Important rules:
 - Return EXACTLY ONE JSON object
 - Represent narration and dialogue as separate segments

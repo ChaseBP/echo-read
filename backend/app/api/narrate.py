@@ -37,6 +37,37 @@ def build_narration_config(segment: dict, global_cfg: dict):
     )
 
 
+def bulild_word_timeline(char_timeline):
+    words = []
+    current = None
+
+    for item in char_timeline:
+        ch = item["char"]
+
+        if ch.isalnum():
+            if current is None:
+                current = {
+                    "word": ch,
+                    "start": item["start"],
+                    "end": item["end"],
+                    "char_start": item["index"],
+                    "char_end": item["index"] + 1,
+                    "role": item["role"],
+                }
+            else:
+                current["word"] += ch
+                current["end"] = item["end"]
+                current["char_end"] = item["index"] + 1
+        else:
+            if current:
+                words.append(current)
+                current = None
+    if current:
+        words.append(current)
+
+    return words
+
+
 router = APIRouter()
 
 
@@ -70,6 +101,8 @@ def narrate(req: NarrationRequest):
     segments = chunk_by_offsets(normalized_text, merged_segments)
 
     final_audio = b""
+    char_timeline = []
+    global_char_index = 0
     timeline = []
     cursor = 0.0
 
@@ -80,6 +113,20 @@ def narrate(req: NarrationRequest):
 
         final_audio += result["audio_bytes"]
 
+        alignment = result["alignment"]
+
+        for i, ch in enumerate(alignment.characters):
+            char_timeline.append(
+                {
+                    "char": ch,
+                    "index": global_char_index,
+                    "start": cursor + alignment.character_start_times_seconds[i],
+                    "end": cursor + alignment.character_end_times_seconds[i],
+                    "role": result["role"],
+                }
+            )
+            global_char_index += 1
+
         timeline.append(
             {
                 "role": result["role"],
@@ -88,7 +135,11 @@ def narrate(req: NarrationRequest):
             }
         )
         cursor += result["duration"]
+    word_timeline = bulild_word_timeline(char_timeline)
+
     return {
         "audio": base64.b64encode(final_audio).decode("utf-8"),
         "timeline": timeline,
+        "char_timeline": char_timeline,
+        "word_timeline": word_timeline,
     }

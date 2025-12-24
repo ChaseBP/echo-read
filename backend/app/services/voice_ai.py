@@ -128,4 +128,6 @@ def synthesize_voice(text: str, narration_config):
         "audio_bytes": base64.b64decode(audio_base64),
         "duration": duration,
         "role": narration_config.speaker_role,
+        "alignment": alignment,
+        "text": shaped_text,
     }

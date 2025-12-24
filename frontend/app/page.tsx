@@ -11,6 +11,11 @@ import {
   RoleTimelineSegment,
 } from "@/components/NarrationVisualization";
 
+import {
+  WordHighlightText,
+  WordTimelineItem,
+} from "@/components/WordHighlightText";
+
 export default function Page() {
   const [storyText, setStoryText] = useState("");
 
@@ -23,6 +28,10 @@ export default function Page() {
   const [progress, setProgress] = useState(0);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  const [wordTimeline, setWordTimeline] = useState<WordTimelineItem[]>([]);
+
+  const [currentTime, setCurrentTime] = useState(0); // seconds
 
   /** Timeline used ONLY for visualization */
 
@@ -99,6 +108,7 @@ export default function Page() {
       // store raw backend timeline (seconds)
 
       rawTimelineRef.current = data.timeline;
+      setWordTimeline(data.word_timeline);
 
       setTimeout(() => {
         audioRef.current?.play();
@@ -121,7 +131,7 @@ export default function Page() {
           <div className="flex items-center justify-center gap-3 mb-3">
             <Sparkles className="w-8 h-8 text-indigo-400" />
 
-            <h1 className="text-5xl tracking-tight">EchoRead</h1>
+            <h1 className="text-5xl font-medium tracking-tight">EchoRead</h1>
           </div>
 
           <p className="text-gray-400 text-lg">
@@ -191,11 +201,18 @@ export default function Page() {
 
           {/* RIGHT COLUMN */}
 
-          <NarrationVisualization
-            segments={segments}
-            currentProgress={progress}
-            isPlaying={isPlaying}
-          />
+          <div className="space-y-6">
+            <WordHighlightText
+              text={storyText}
+              words={wordTimeline}
+              currentTime={currentTime}
+            />
+            <NarrationVisualization
+              segments={segments}
+              currentProgress={progress}
+              isPlaying={isPlaying}
+            />
+          </div>
         </div>
 
         {/* Hidden audio element */}
@@ -220,6 +237,9 @@ export default function Page() {
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={() => {
             if (!audioRef.current?.duration) return;
+
+            const t = audioRef.current.currentTime;
+            setCurrentTime(t);
 
             setProgress(
               (audioRef.current.currentTime / audioRef.current.duration) * 100,

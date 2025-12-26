@@ -5,12 +5,10 @@ from typing import Any, Dict
 from app.models.narration import NarrationConfig, NarrationRequest
 from app.services.segmenter import (
     chunk_by_offsets,
-    fallback_segments,
     merge_adjacent_segments,
     normalize_text,
-    validate_segment_coverage,
 )
-from app.services.story_ai import analyze_story
+from app.services.story_ai import analyze_story, realign_segments
 from app.services.voice_ai import synthesize_voice
 from fastapi import APIRouter
 
@@ -37,7 +35,7 @@ def build_narration_config(segment: dict, global_cfg: dict):
     )
 
 
-def bulild_word_timeline(char_timeline):
+def build_word_timeline(char_timeline):
     words = []
     current = None
 
@@ -79,24 +77,25 @@ def narrate(req: NarrationRequest):
     if cache_key in _GEMINI_CACHE:
         print("✅ Gemini cache hit")
         analysis = _GEMINI_CACHE[cache_key]
-        merged_segments = merge_adjacent_segments(analysis["segments"])
+        merged_segments = analysis["segments"]
     else:
         print("❌ Gemini cache miss -> calling Gemini")
         analysis = analyze_story(normalized_text)
         raw_segments = analysis["segments"]
-        merged_segments = merge_adjacent_segments(raw_segments)
 
-        if validate_segment_coverage(normalized_text, merged_segments):
-            _GEMINI_CACHE[cache_key] = analysis
-        else:
-            print("⚠️ Invalid segment coverage. Using narrator-only fallback.")
-            print(
-                "Length of Normalized Text:",
-                len(normalized_text),
-                "Final end_char:",
-                merged_segments[-1]["end_char"],
-            )
-            merged_segments = fallback_segments(normalized_text)
+        # Converting segments to get exact character offsets
+        realigned_segments = realign_segments(normalized_text, raw_segments)
+
+        merged_segments = merge_adjacent_segments(realigned_segments)
+
+        print("Debug purposes->merged_segments:", merged_segments)
+
+        analysis = {
+            **analysis,
+            "segments": merged_segments,
+        }
+
+        _GEMINI_CACHE[cache_key] = analysis
 
     segments = chunk_by_offsets(normalized_text, merged_segments)
 
@@ -135,7 +134,7 @@ def narrate(req: NarrationRequest):
             }
         )
         cursor += result["duration"]
-    word_timeline = bulild_word_timeline(char_timeline)
+    word_timeline = build_word_timeline(char_timeline)
 
     return {
         "audio": base64.b64encode(final_audio).decode("utf-8"),

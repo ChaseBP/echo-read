@@ -49,20 +49,13 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 ## ✨ Key Differentiators
 
 | Feature | Traditional TTS | **EchoRead** |
-
-|------|-----------------|--------------|
-
-| Voice Casting | Single static voice | 🎭 Dynamic multi-role casting |
-
-| Emotional Awareness | Flat / sentence-level | 🧠 Scene-aware emotional flow |
-
-| Pace Control | Linear | 🎚️ Intensity-driven micro-variation |
-
-| Dialogue Handling | Reads quotes | 🎬 Performs characters |
-
-| Creative Direction | None | 🎧 AI Director Engine |
-
-| Playback Sync | Audio only | 🎥 Real-time word-level cinematic sync |
+| --- | --- | --- |
+| **Voice Casting** | Single static voice | 🎭 Dynamic multi-role casting |
+| **Emotional Awareness** | Flat / sentence-level | 🧠 Scene-aware emotional flow |
+| **Pace Control** | Linear | 🎚️ Intensity-driven micro-variation |
+| **Dialogue Handling** | Reads quotes | 🎬 Performs characters |
+| **Creative Direction** | None | 🎧 AI Director Engine |
+| **Playback Sync** | Audio only | 🎥 Real-time word-level cinematic sync |
 
 ---
 
@@ -177,3 +170,4 @@ uvicorn app.main:app --reload
 **License:** MIT
 
 ---
+

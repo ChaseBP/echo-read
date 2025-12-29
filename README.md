@@ -93,11 +93,6 @@ At the heart of this is a carefully constrained system prompt and schema that fo
 
 - Python 3.10+
 
-# Create .env file with your keys or rename the .env.example to .env 
-
-# ELEVENLABS_API_KEY=...
-
-# GOOGLE_API_KEY=...
 
 
 ### 1️⃣ Frontend Setup (Next.js 16)
@@ -130,18 +125,15 @@ source venv/bin/activate    # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
-
-
-
-
-
 uvicorn app.main:app --reload
 
 # Backend runs at http://localhost:8000
 
+# Create .env file with your keys or rename the .env.example to .env 
 
+# ELEVENLABS_API_KEY=...
 
-
+# GOOGLE_API_KEY=...
 
 ```
 
@@ -153,7 +145,7 @@ uvicorn app.main:app --reload
 
 - **Voice Synthesis:** ElevenLabs v3 (High-fidelity performance)
 
-- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4 (Beta)
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4
 
 - **Backend:** Python FastAPI
 

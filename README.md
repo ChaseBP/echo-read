@@ -93,7 +93,12 @@ At the heart of this is a carefully constrained system prompt and schema that fo
 
 - Python 3.10+
 
-- FFmpeg (Installed and in PATH)
+# Create .env file with your keys or rename the .env.example to .env 
+
+# ELEVENLABS_API_KEY=...
+
+# GOOGLE_API_KEY=...
+
 
 ### 1️⃣ Frontend Setup (Next.js 16)
 
@@ -127,17 +132,14 @@ pip install -r requirements.txt
 
 
 
-# Create .env file with your keys
-
-# ELEVENLABS_API_KEY=...
-
-# GOOGLE_API_KEY=...
 
 
 
 uvicorn app.main:app --reload
 
 # Backend runs at http://localhost:8000
+
+
 
 
 
@@ -170,4 +172,5 @@ uvicorn app.main:app --reload
 **License:** MIT
 
 ---
+
 

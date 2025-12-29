@@ -15,6 +15,9 @@ from fastapi import APIRouter
 # Gemini cache dictionary
 _GEMINI_CACHE: Dict[str, Any] = {}
 
+# Elevenlabs audio cache dictionary
+_AUDIO_CACHE: Dict[str, Dict[str, Any]] = {}
+
 
 def _cache_key_for_text(text: str) -> str:
     """
@@ -74,6 +77,11 @@ def narrate(req: NarrationRequest):
     normalized_text = normalize_text(req.text)
     cache_key = _cache_key_for_text(normalized_text)
 
+    # Skip everything if audio is already generated
+    if cache_key in _AUDIO_CACHE:
+        print("✅ Audio cache hit")
+        return _AUDIO_CACHE[cache_key]
+
     if cache_key in _GEMINI_CACHE:
         print("✅ Gemini cache hit")
         analysis = _GEMINI_CACHE[cache_key]
@@ -87,8 +95,6 @@ def narrate(req: NarrationRequest):
         realigned_segments = realign_segments(normalized_text, raw_segments)
 
         merged_segments = merge_adjacent_segments(realigned_segments)
-
-        print("Debug purposes->merged_segments:", merged_segments)
 
         analysis = {
             **analysis,
@@ -105,7 +111,7 @@ def narrate(req: NarrationRequest):
     timeline = []
     cursor = 0.0
 
-    for segment in segments:
+    for i, segment in enumerate(segments):
         config = build_narration_config(segment, analysis["global"])
 
         result = synthesize_voice(segment["text"], config)
@@ -129,6 +135,8 @@ def narrate(req: NarrationRequest):
         timeline.append(
             {
                 "role": result["role"],
+                "emotion": config.emotion,
+                "intensity": config.intensity,
                 "start": cursor,
                 "end": cursor + result["duration"],
             }
@@ -136,9 +144,14 @@ def narrate(req: NarrationRequest):
         cursor += result["duration"]
     word_timeline = build_word_timeline(char_timeline)
 
-    return {
+    response = {
         "audio": base64.b64encode(final_audio).decode("utf-8"),
         "timeline": timeline,
         "char_timeline": char_timeline,
         "word_timeline": word_timeline,
     }
+
+    # Save to audio cache
+    _AUDIO_CACHE[cache_key] = response
+
+    return response

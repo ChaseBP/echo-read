@@ -160,7 +160,6 @@ Text:
     response = model.generate_content(prompt)
 
     raw = response.text.strip()
-    print("Gemini raw response:", raw)
 
     start = raw.find("{")
     end = raw.rfind("}") + 1

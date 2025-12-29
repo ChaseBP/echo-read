@@ -53,24 +53,61 @@ def _select_voice_id(config):
 
 def _map_voice_settings(config):
     """
-    Mapping narration config -> ElevenLabs v3 voice settings.
+    Emotion + intensity driven voice control.
+    Compatible with ElevenLabs v3 stability constraints.
     """
-    if config.emotion in ["dramatic", "anxious", "tense", "angry", "excited"]:
-        stability = 0.0  # Creative (expressive, unstable delivery)
 
-    elif config.emotion in ["romantic", "relieved", "sad"]:
-        stability = 0.5  # Natural (controlled emotion)
-
-    else:  # calm, narration, default
-        stability = 1.0  # Robust (steady narrator voice)
-
-    style = min(1.0, 0.3 + (config.intensity * 0.15))
-
-    return {
-        "stability": stability,
-        "similarity_boost": 0.75,
-        "style": style,
+    # 1. Defaults (Natural narration)
+    settings = {
+        "stability": 0.5,  # MUST be 0.0 | 0.5 | 1.0
+        "style": 0.0,
+        "speed": 1.0,
         "use_speaker_boost": True,
+        "similarity_boost": 0.75,
+    }
+
+    # 2. Emotion → baseline intent (NOT final stability)
+    emotion_map = {
+        "calm": {"intent": "robust", "style": 0.10, "speed": 1.00},
+        "tense": {"intent": "creative", "style": 0.45, "speed": 1.05},
+        "anxious": {"intent": "creative", "style": 0.50, "speed": 1.03},
+        "angry": {"intent": "creative", "style": 0.65, "speed": 1.05},
+        "excited": {"intent": "creative", "style": 0.60, "speed": 1.06},
+        "dramatic": {"intent": "creative", "style": 0.65, "speed": 1.00},
+        "sad": {"intent": "natural", "style": 0.30, "speed": 0.94},
+        "romantic": {"intent": "natural", "style": 0.35, "speed": 0.97},
+        "relieved": {"intent": "natural", "style": 0.25, "speed": 0.98},
+    }
+
+    if config.emotion in emotion_map:
+        base = emotion_map[config.emotion]
+
+        # Map intent → legal stability
+        settings["stability"] = {
+            "creative": 0.0,
+            "natural": 0.5,
+            "robust": 1.0,
+        }[base["intent"]]
+
+        settings["style"] = base["style"]
+        settings["speed"] = base["speed"]
+
+    # 3. Intensity scaling (ONLY affects style, never stability)
+    # intensity -> [1–5]
+    intensity_factor = (config.intensity - 1) / 4.0
+    settings["style"] += intensity_factor * 0.25
+
+    # 4. audio_tag → extra expressiveness
+    if getattr(config, "audio_tag", None) not in (None, "none"):
+        settings["style"] += 0.10
+
+    # 5. Safety clamps
+    return {
+        "stability": settings["stability"],
+        "style": round(min(settings["style"], 1.0), 2),
+        "speed": round(min(max(settings["speed"], 0.88), 1.12), 2),
+        "use_speaker_boost": True,
+        "similarity_boost": 0.75,
     }
 
 
@@ -79,22 +116,13 @@ def _shape_text(text: str, config):
     Shape narration text using voice-cues.
     """
 
-    shaped_text = text
-
-    if hasattr(config, "audio_tag") and config.audio_tag != "none":
-        shaped_text = f"[{config.audio_tag}]\n{shaped_text}"
-
-    # Pace shaping
-    if config.pace == "fast":
-        shaped_text = shaped_text.replace(", ", " ")
-        shaped_text = shaped_text.replace(". ", ".\n")
-    elif config.pace == "slow":
-        shaped_text = shaped_text.replace(". ", "...\n")
-
-    return shaped_text
+    # Get the audio tag from config
+    if getattr(config, "audio_tag", None) not in (None, "none"):
+        return f"[{config.audio_tag}]\n{text}"
+    return text
 
 
-def synthesize_voice(text: str, narration_config):
+def synthesize_voice(text: str, narration_config, previous_text=None, next_text=None):
     """
     Returns:
     {
@@ -119,13 +147,12 @@ def synthesize_voice(text: str, narration_config):
         voice_settings=voice_settings,
     )
 
-    audio_base64 = response.audio_base_64
     alignment = response.normalized_alignment
 
     duration = alignment.character_end_times_seconds[-1]
 
     return {
-        "audio_bytes": base64.b64decode(audio_base64),
+        "audio_bytes": base64.b64decode(response.audio_base_64),
         "duration": duration,
         "role": narration_config.speaker_role,
         "alignment": alignment,

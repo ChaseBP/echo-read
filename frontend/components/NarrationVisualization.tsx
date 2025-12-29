@@ -1,9 +1,12 @@
 "use client";
 
 import { Mic, UserRound } from "lucide-react";
+import { Emotion } from "./EmotionVisualization";
 
 export interface RoleTimelineSegment {
   role: "narrator" | "male_character" | "female_character";
+  emotion: Emotion;
+  intensity: number; // 1-5
   startProgress: number;
   endProgress: number;
 }

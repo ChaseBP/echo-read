@@ -2,36 +2,37 @@
 
 import { useState, useRef } from "react";
 
-import { Play, Pause, Sparkles } from "lucide-react";
-
 import { narrateText } from "@/lib/api";
 
-import {
-  NarrationVisualization,
-  RoleTimelineSegment,
-} from "@/components/NarrationVisualization";
+import { RoleTimelineSegment } from "@/components/NarrationVisualization";
 
-import {
-  WordHighlightText,
-  WordTimelineItem,
-} from "@/components/WordHighlightText";
+import { WordTimelineItem } from "@/components/WordHighlightText";
+
+import { ComposeMode } from "@/components/ComposeMode";
+import { PlaybackMode } from "@/components/PlaybackMode";
+
+type AppMode = "compose" | "playback";
 
 export default function Page() {
+  /* -------------------- core state -------------------- */
+
+  const [mode, setMode] = useState<AppMode>("compose");
+
   const [storyText, setStoryText] = useState("");
 
   const [isNarrating, setIsNarrating] = useState(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const [isDramatic, setIsDramatic] = useState(false);
-
   const [progress, setProgress] = useState(0);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  const [duration, setDuration] = useState(0);
+
   const [wordTimeline, setWordTimeline] = useState<WordTimelineItem[]>([]);
 
-  const [currentTime, setCurrentTime] = useState(0); // seconds
+  const [currentTime, setCurrentTime] = useState(0);
 
   /** Timeline used ONLY for visualization */
 
@@ -49,27 +50,24 @@ export default function Page() {
     isPlaying ? audioRef.current.pause() : audioRef.current.play();
   }
 
-  function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
-    if (!audioRef.current?.duration) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    const percent = (e.clientX - rect.left) / rect.width;
-
-    audioRef.current.currentTime = percent * audioRef.current.duration;
+  function handleSeek(time: number) {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
   }
-
-  /** Convert backend timeline (seconds) → UI progress (%) */
 
   function buildRoleTimeline(
     timeline: any[],
 
     duration: number,
   ): RoleTimelineSegment[] {
-    if (!duration || duration === 0) return [];
+    if (!duration) return [];
 
     return timeline.map((seg) => ({
       role: seg.role,
+
+      emotion: seg.emotion,
+
+      intensity: seg.intensity,
 
       startProgress: (seg.start / duration) * 100,
 
@@ -77,10 +75,17 @@ export default function Page() {
     }));
   }
 
+  function handleBackToCompose() {
+    audioRef.current?.pause();
+    setIsPlaying(false);
+    setProgress(0);
+    setMode("compose");
+  }
+
   /* -------------------- narrate -------------------- */
 
-  async function handleNarrate() {
-    if (!storyText.trim()) return;
+  async function handleNarrate(text: string) {
+    if (!text.trim()) return;
 
     try {
       setIsNarrating(true);
@@ -93,7 +98,9 @@ export default function Page() {
 
       setSegments([]);
 
-      const data = await narrateText(storyText, isDramatic);
+      setStoryText(text);
+
+      const data = await narrateText(text, false);
 
       const audioBlob = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
@@ -105,16 +112,17 @@ export default function Page() {
 
       setAudioUrl(url);
 
-      // store raw backend timeline (seconds)
-
       rawTimelineRef.current = data.timeline;
+
       setWordTimeline(data.word_timeline);
+
+      setMode("playback");
 
       setTimeout(() => {
         audioRef.current?.play();
       }, 100);
     } catch {
-      alert("Narration failed. Try a shorter text.");
+      alert("Narration failed. Try shorter text.");
     } finally {
       setIsNarrating(false);
     }
@@ -123,135 +131,58 @@ export default function Page() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        {/* Header */}
-
-        <header className="mb-12 text-center">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <Sparkles className="w-8 h-8 text-indigo-400" />
-
-            <h1 className="text-5xl font-medium tracking-tight">EchoRead</h1>
-          </div>
-
-          <p className="text-gray-400 text-lg">
-            Adaptive AI Voice Narration for Light Novels
-          </p>
-        </header>
-
-        {/* Two-column layout */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* LEFT COLUMN */}
-
-          <div className="space-y-8">
-            <textarea
-              value={storyText}
-              onChange={(e) => setStoryText(e.target.value)}
-              placeholder="Paste your light novel text here…"
-              className="w-full h-80 bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-5 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              disabled={isNarrating}
-            />
-
-            <div className="flex gap-4">
-              <button
-                onClick={handleNarrate}
-                disabled={isNarrating || !storyText.trim()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 px-8 py-4 rounded-xl"
-              >
-                {isNarrating ? "Narrating…" : "Narrate"}
-              </button>
-
-              <button
-                onClick={() => setIsDramatic(!isDramatic)}
-                className={`px-6 py-4 rounded-xl border-2 ${isDramatic
-                    ? "bg-purple-600 border-purple-600"
-                    : "border-zinc-800 text-gray-400"
-                  }`}
-              >
-                More Dramatic
-              </button>
-            </div>
-
-            {/* Audio controls + slider */}
-
-            {audioUrl && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={togglePlayPause}
-                    className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center"
-                  >
-                    {isPlaying ? <Pause /> : <Play />}
-                  </button>
-
-                  <div
-                    className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden cursor-pointer"
-                    onClick={handleSeek}
-                  >
-                    <div
-                      className="h-full bg-indigo-500 transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT COLUMN */}
-
-          <div className="space-y-6">
-            <WordHighlightText
-              text={storyText}
-              words={wordTimeline}
-              currentTime={currentTime}
-            />
-            <NarrationVisualization
-              segments={segments}
-              currentProgress={progress}
-              isPlaying={isPlaying}
-            />
-          </div>
-        </div>
-
-        {/* Hidden audio element */}
-
-        <audio
-          ref={audioRef}
-          src={audioUrl ?? undefined}
-          onLoadedMetadata={() => {
-            if (!audioRef.current) return;
-
-            const duration = audioRef.current.duration;
-
-            const timeline = buildRoleTimeline(
-              rawTimelineRef.current,
-
-              duration,
-            );
-
-            setSegments(timeline);
-          }}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onTimeUpdate={() => {
-            if (!audioRef.current?.duration) return;
-
-            const t = audioRef.current.currentTime;
-            setCurrentTime(t);
-
-            setProgress(
-              (audioRef.current.currentTime / audioRef.current.duration) * 100,
-            );
-          }}
-          onEnded={() => {
-            setIsPlaying(false);
-
-            setProgress(100);
-          }}
+    <div className="dark min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-foreground overflow-hidden">
+      {mode === "compose" ? (
+        <ComposeMode
+          initialText={storyText}
+          isLoading={isNarrating}
+          onNarrate={handleNarrate}
         />
-      </div>
+      ) : (
+        <PlaybackMode
+          storyText={storyText}
+          wordTimeline={wordTimeline}
+          segments={segments}
+          currentTime={currentTime}
+          progress={progress}
+          isPlaying={isPlaying}
+          duration={duration}
+          onPlayPause={togglePlayPause}
+          onSeek={handleSeek}
+          onBackToCompose={handleBackToCompose}
+        />
+      )}
+
+      {/* Audio element ALWAYS mounted */}
+
+      <audio
+        ref={audioRef}
+        src={audioUrl ?? undefined}
+        onLoadedMetadata={() => {
+          if (!audioRef.current) return;
+
+          const d = audioRef.current.duration;
+          setDuration(d);
+
+          setSegments(buildRoleTimeline(rawTimelineRef.current, d));
+        }}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={() => {
+          if (!audioRef.current?.duration) return;
+
+          const t = audioRef.current.currentTime;
+
+          setCurrentTime(t);
+
+          setProgress((t / audioRef.current.duration) * 100);
+        }}
+        onEnded={() => {
+          setIsPlaying(false);
+
+          setProgress(100);
+        }}
+      />
     </div>
   );
 }

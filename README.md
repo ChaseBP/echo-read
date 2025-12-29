@@ -49,20 +49,13 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 ## ✨ Key Differentiators
 
 | Feature | Traditional TTS | **EchoRead** |
-
-|------|-----------------|--------------|
-
-| Voice Casting | Single static voice | 🎭 Dynamic multi-role casting |
-
-| Emotional Awareness | Flat / sentence-level | 🧠 Scene-aware emotional flow |
-
-| Pace Control | Linear | 🎚️ Intensity-driven micro-variation |
-
-| Dialogue Handling | Reads quotes | 🎬 Performs characters |
-
-| Creative Direction | None | 🎧 AI Director Engine |
-
-| Playback Sync | Audio only | 🎥 Real-time word-level cinematic sync |
+| --- | --- | --- |
+| **Voice Casting** | Single static voice | 🎭 Dynamic multi-role casting |
+| **Emotional Awareness** | Flat / sentence-level | 🧠 Scene-aware emotional flow |
+| **Pace Control** | Linear | 🎚️ Intensity-driven micro-variation |
+| **Dialogue Handling** | Reads quotes | 🎬 Performs characters |
+| **Creative Direction** | None | 🎧 AI Director Engine |
+| **Playback Sync** | Audio only | 🎥 Real-time word-level cinematic sync |
 
 ---
 
@@ -100,7 +93,7 @@ At the heart of this is a carefully constrained system prompt and schema that fo
 
 - Python 3.10+
 
-- FFmpeg (Installed and in PATH)
+
 
 ### 1️⃣ Frontend Setup (Next.js 16)
 
@@ -132,21 +125,15 @@ source venv/bin/activate    # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
-
-
-# Create .env file with your keys
-
-# ELEVENLABS_API_KEY=...
-
-# GOOGLE_API_KEY=...
-
-
-
 uvicorn app.main:app --reload
 
 # Backend runs at http://localhost:8000
 
+# Create .env file with your keys or rename the .env.example to .env 
 
+# ELEVENLABS_API_KEY=...
+
+# GOOGLE_API_KEY=...
 
 ```
 
@@ -158,7 +145,7 @@ uvicorn app.main:app --reload
 
 - **Voice Synthesis:** ElevenLabs v3 (High-fidelity performance)
 
-- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4 (Beta)
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4
 
 - **Backend:** Python FastAPI
 
@@ -177,3 +164,5 @@ uvicorn app.main:app --reload
 **License:** MIT
 
 ---
+
+

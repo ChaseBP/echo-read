@@ -2,60 +2,51 @@
 
 ### _A real-time narrative performance engine that directs AI voices to **act**, not just read._
 
-![EchoRead Cinematic Demo](insert_link_here)
+https://github.com/user-attachments/assets/ba6fe8b1-6d7b-422f-9a4b-d563d921139d
+
+### 📺 [Watch the Full Walkthrough on YouTube](LINK)
+---
 
 **🏆 Built for the ElevenLabs x Google Cloud AI Accelerate Hackathon**
 
 **Tracks:** ElevenLabs Challenge · Google Cloud Vertex AI
-
 **Tech Focus:** Real-time voice direction, emotional performance, cinematic text–audio sync
 
 ---
 
-## 🚨 Why EchoRead Exists (The Audiobook Gap)
+## 🚨 The Problem: The Audiobook Gap
 
-### The Problem
+**High-quality, multi-cast audio storytelling is prohibitively expensive and time-consuming.**
 
-High-quality, multi-cast audio storytelling is **gatekept**.
-
-- Professional audiobook production costs **$5,000+**
-
-- Takes **weeks** of casting, direction, and post-production
-
-- Standard TTS systems are _flat_: they read text literally, ignoring **subtext**, **tension**, and **emotion**
-
-Most AI narration tools stop at _pronunciation_.
-
-They don’t understand **why** a line is whispered… or **when** a scream should crack.
+* ❌ Professional audiobook production costs **$5,000+** and takes **weeks**.
+* ❌ Standard TTS systems are **flat**: they read text literally, ignoring subtext, tension, and emotion.
+* ❌ Most AI narration tools stop at *pronunciation*. They don’t understand **why** a line is whispered or **when** a scream should crack.
 
 ---
 
-### The Solution — _EchoRead_
+## 💡 The Solution: An AI Director
 
-EchoRead acts as an **AI Audio Director**.
+**EchoRead introduces a reasoning layer between text and audio, functioning as an AI Director.**
 
-Instead of converting text → speech directly, EchoRead:
+Instead of converting `text → speech` directly, EchoRead:
+1.  **Understands the scene** (Contextual Awareness)
+2.  **Directs voices like actors** (Assigning emotions & stability)
+3.  **Performs the story in real time** (Streaming audio)
 
-1. **Understands the scene**
-
-2. **Directs voices like actors**
-
-3. **Performs the story in real time**
-
-The result is a **full-cast, emotionally directed audio performance** generated in seconds — not weeks.
+The result is a **full-cast, emotionally directed audio performance** generated in **seconds** — not weeks.
 
 ---
 
 ## ✨ Key Differentiators
 
-| Feature | Traditional TTS | **EchoRead** |
+| Feature | Traditional TTS | EchoRead |
 | --- | --- | --- |
-| **Voice Casting** | Single static voice | 🎭 Dynamic multi-role casting |
-| **Emotional Awareness** | Flat / sentence-level | 🧠 Scene-aware emotional flow |
-| **Pace Control** | Linear | 🎚️ Intensity-driven micro-variation |
-| **Dialogue Handling** | Reads quotes | 🎬 Performs characters |
-| **Creative Direction** | None | 🎧 AI Director Engine |
-| **Playback Sync** | Audio only | 🎥 Real-time word-level cinematic sync |
+| **Voice Casting** | Single static voice | **🎭 Dynamic multi-role casting** |
+| **Context Scope** | Isolated sentences | **📖 Full scene context analysis** |
+| **Emotional Logic** | Flat / Literal | **🧠 Detects subtext (sarcasm, fear)** |
+| **Voice Parameters** | Static global settings | **Dynamic per-line tuning (style, speed, stability)** |
+| **Dialogue Handling** | Reads quotes | **🎬 Performs characters** |
+| **Pacing** | Constant speed | **Micro-pauses & intensity shifts** |
 
 ---
 
@@ -63,107 +54,130 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 
 ![System Architecture](.screenshots/actd.png)
 
-**High-level Flow:**
+### The EchoRead Engine
+Unlike simple TTS wrappers, EchoRead uses a multi-stage **orchestration engine** to construct a performance:
 
-1. User submits story text
+#### 1. 📥 Ingestion
+Raw novel text is received from the user.
 
-2. **Gemini-3-Flash** analyzes narrative structure & emotion
+#### 2. 🧠 Director Agent (Gemini 3 Flash)
+The **entire scene** is passed to the LLM to ensure global context. Gemini analyzes the narrative arc and outputs a structured "Performance Script" (JSON) containing roles, emotions, and intensity levels for every line.
+> ⚡ **Optimization:** This analysis is stored in the **Analysis Cache**. If audio generation needs a retry, we reuse this existing narrative direction.
 
-3. Structured JSON “performance script” is generated
+#### 3. 🧩 Text Alignment Engine
+We map the LLM's generated segments back to the original source text using **exact string matching** with a fallback to **fuzzy matching**. This ensures perfect 1:1 alignment between the script and the audio generation chunks.
 
-4. **ElevenLabs v3** synthesizes emotionally directed audio
+#### 4. 🎛️ Segment Orchestrator
+The engine translates the JSON parameters (e.g., `intensity: 5`) into specific ElevenLabs voice settings (e.g., `stability: 0.5`, `style: 1.0`, `speed: 1.06`).
 
-5. Frontend renders synced text, roles, emotion, and intensity in real time
+#### 5. 🗣️ Directed Synthesis
+Audio is generated segment-by-segment.
+> 💾 **Optimization:** The final mastered audio is stored in the **Audio Cache**. If the user re-submits the exact same text, the full performance is served instantly.
+
+#### 6. 🎞️ Timeline Builder
+The backend stitches audio blobs and aligns word-level timestamps to create the "Karaoke" sync data.
 
 ---
 
 ## 🧠 Under the Hood: The Director Engine
 
-EchoRead’s core innovation is its **Director Engine** — a reasoning layer that decides _how_ something should be spoken **before** it is synthesized.
+_EchoRead_ is powered by the **Director Engine**—a reasoning layer that decides *how* something should be spoken **before** it is synthesized.
 
-At the heart of this is a carefully constrained system prompt and schema that forces Gemini to think like a **performance analyst**, not a summarizer.
+We force Gemini 3 Flash to output a strict schema that directs the performance:
 
+```json
+{
+  "global": {
+    "dominant_emotion": "tense",
+    "default_pace": "fast"
+  },
+  "segments": [
+    {
+      "text": "I told you to leave me alone!",
+      "role": "male_character",
+      "emotion": "angry",
+      "intensity": 5,
+      "audio_tag": "angry"
+    }
+  ]
+}
+```
 ---
 
-## 🛠️ Installation Instructions
+## 🛠️ Installation & Setup
 
-### Prerequisites
+### 📋 Prerequisites
 
-- Node.js v20+
+Before you begin, ensure you have the following installed:
+* **[Node.js v20+](https://nodejs.org/)** (Required for Next.js 16)
+* **[Python 3.10+](https://www.python.org/downloads/)** (Required for FastAPI)
+* **API Keys:**
+    * **Google Gemini API Key** (Get it from [Google AI Studio](https://aistudio.google.com/))
+    * **ElevenLabs API Key** (Get it from [ElevenLabs](https://elevenlabs.io/))
+---
+### 1️⃣ Backend Setup (FastAPI)
+*The backend handles the narrative logic (Gemini) and audio synthesis (ElevenLabs).*
 
-- Python 3.10+
-
-
-
-### 1️⃣ Frontend Setup (Next.js 16)
-
-We use `npm ci` to ensure you get the exact lockfile versions for Next.js 16 and Tailwind v4.
-
-```bash
-
-cd frontend
-
-npm ci
-
-npm run dev
-
-# App runs at http://localhost:3000
-
-
-
-```
-
-### 2️⃣ Backend Setup (FastAPI)
+**⚠️ Step 1: Configure Environment Variables (Do this first!)**
+1. Look for the `.env.example` file in the main folder and rename it to `.env`
+2. Open `.env` and paste your keys.
 
 ```bash
-
+# 1. Navigate to the backend directory
 cd backend
 
-python -m venv venv
+# 2. Create a virtual environment (Recommended to avoid conflicts)
+python3 -m venv venv
 
-source venv/bin/activate    # Windows: venv\Scripts\activate
+# 3. Activate the virtual environment
+# ------------------------------------
+#  On macOS / Linux:
+source venv/bin/activate
+#  On Windows:
+venv\Scripts\activate
 
+# 4. Install dependencies
 pip install -r requirements.txt
 
+# 5. Start the server
 uvicorn app.main:app --reload
 
-# Backend runs at http://localhost:8000
-
-# Create .env file with your keys or rename the .env.example to .env 
-
-# ELEVENLABS_API_KEY=...
-
-# GOOGLE_API_KEY=...
+# ✅ Success! The API should be running at: http://localhost:8000
 
 ```
 
+### 2️⃣ Frontend Setup (Next.js 16)
+*The frontend provides the cinematic playback interface.*
+
+```bash
+# 1. Navigate to the frontend directory (Open a new terminal)
+cd frontend
+
+# 2. Install dependencies
+# Use 'npm ci' instead of 'install' to strictly adhere to the lockfile
+# This prevents version mismatches with Next.js 16 / Tailwind v4
+npm ci
+
+# 3. Start the development server
+npm run dev
+
+# ✅ Success! Open your browser to: http://localhost:3000
+```
 ---
 
 ## 💻 Tech Stack
 
-- **Narrative Intelligence:** Google Gemini 3 Flash (Reasoning)
-
-- **Voice Synthesis:** ElevenLabs v3 (High-fidelity performance)
-
-- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4
-
-- **Backend:** Python FastAPI
-
+| Component | Technology | Role |
+| :--- | :--- | :--- |
+| **AI Brain** | ![Gemini](https://img.shields.io/badge/Google%20Gemini-3%20Flash-8E75B2?style=flat-square&logo=googlebard&logoColor=white) | Handles narrative reasoning, emotion extraction, and text segmentation. |
+| **Voice Engine** | ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-v3-333333?style=flat-square&logo=googlepodcasts&logoColor=white) | Generates high-fidelity, context-aware speech with ultra-low latency. |
+| **Frontend** | ![Next.js 16](https://img.shields.io/badge/Next.js-16_RC-000000?style=flat-square&logo=next.js) | **App Router & React 19**. Provides a cinematic, glitch-free UI. |
+| **Styling** | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4_Alpha-38B2AC?style=flat-square&logo=tailwind-css) | Utility-first styling for rapid, responsive design. |
+| **Backend** | ![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=flat-square&logo=fastapi&logoColor=white) | Asynchronous backend handling API orchestration and audio stream buffering. |
 ---
 
 ## 🚀 Future Roadmap
 
-- **Export to Mastered Audio (.WAV):** Allow authors to download the final mix for podcasts/audiobooks.
+- [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
-- **User Voice Cloning:** Authors can clone their own voice to be the "Narrator" role.
-
-- **Ambient Soundscape Injection:** Automatically generating rain, city noise, or battle sounds based on the text context.
-
----
-
-**License:** MIT
-
----
-
-
-
+- [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*

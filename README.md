@@ -1,6 +1,6 @@
 # 🎧 EchoRead
 
-### _A real-time narrative performance engine that directs AI voices to **act**, not just read._
+### _A real-time AI director that elevates narration from robotic to cinematic._
 
 https://github.com/user-attachments/assets/ba6fe8b1-6d7b-422f-9a4b-d563d921139d
 
@@ -181,4 +181,5 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
 

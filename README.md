@@ -61,7 +61,7 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 
 ## 🏗️ System Architecture
 
-![System Architecture](insert_link_to_architecture_screenshot_here)
+![System Architecture](.screenshots/actd.png)
 
 **High-level Flow:**
 
@@ -164,5 +164,6 @@ uvicorn app.main:app --reload
 **License:** MIT
 
 ---
+
 
 

@@ -2,7 +2,7 @@
 
 ### _A real-time narrative performance engine that directs AI voices to **act**, not just read._
 
-![EchoRead Cinematic Demo](insert_link_here)
+![EchoRead Cinematic Demo](.screenshots/demo.mp4)
 
 **🏆 Built for the ElevenLabs x Google Cloud AI Accelerate Hackathon**
 
@@ -164,6 +164,7 @@ uvicorn app.main:app --reload
 **License:** MIT
 
 ---
+
 
 
 

@@ -115,6 +115,11 @@ Before you begin, ensure you have the following installed:
     * **Google Gemini API Key** (Get it from [Google AI Studio](https://aistudio.google.com/))
     * **ElevenLabs API Key** (Get it from [ElevenLabs](https://elevenlabs.io/))
 ---
+###  Clone the repository
+``` bash
+git clone https://github.com/ChaseBP/echo-read
+```
+---
 ### 1️⃣ Backend Setup (FastAPI)
 *The backend handles the narrative logic (Gemini) and audio synthesis (ElevenLabs).*
 
@@ -181,6 +186,7 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
 
 
 

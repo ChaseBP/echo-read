@@ -4,7 +4,7 @@
 
 https://github.com/user-attachments/assets/ba6fe8b1-6d7b-422f-9a4b-d563d921139d
 
-### 📺 [Watch the Full Walkthrough on YouTube](LINK)
+### 📺 [Watch the Full Walkthrough on YouTube](https://www.youtube.com/watch?v=8WW38K6xXhQ)
 ---
 
 **🏆 Built for the ElevenLabs x Google Cloud AI Accelerate Hackathon**
@@ -181,5 +181,6 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
 
 

@@ -1,10 +1,10 @@
 # 🎧 EchoRead
 
-### _A real-time narrative performance engine that directs AI voices to **act**, not just read._
+### _A real-time AI director that elevates narration from robotic to cinematic._
 
 https://github.com/user-attachments/assets/ba6fe8b1-6d7b-422f-9a4b-d563d921139d
 
-### 📺 [Watch the Full Walkthrough on YouTube](LINK)
+### 📺 [Watch the Full Walkthrough on YouTube](https://www.youtube.com/watch?v=8WW38K6xXhQ)
 ---
 
 **🏆 Built for the ElevenLabs x Google Cloud AI Accelerate Hackathon**
@@ -52,7 +52,7 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 
 ## 🏗️ System Architecture
 
-![System Architecture](.screenshots/actd.png)
+<img width="942" height="392" alt="Image" src="https://github.com/user-attachments/assets/ef669a8b-9419-41d5-bdf6-d32fc02e8810" />
 
 ### The EchoRead Engine
 Unlike simple TTS wrappers, EchoRead uses a multi-stage **orchestration engine** to construct a performance:
@@ -114,6 +114,11 @@ Before you begin, ensure you have the following installed:
 * **API Keys:**
     * **Google Gemini API Key** (Get it from [Google AI Studio](https://aistudio.google.com/))
     * **ElevenLabs API Key** (Get it from [ElevenLabs](https://elevenlabs.io/))
+---
+###  Clone the repository
+``` bash
+git clone https://github.com/ChaseBP/echo-read
+```
 ---
 ### 1️⃣ Backend Setup (FastAPI)
 *The backend handles the narrative logic (Gemini) and audio synthesis (ElevenLabs).*
@@ -181,3 +186,8 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
+
+
+
+

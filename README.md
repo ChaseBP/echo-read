@@ -2,7 +2,7 @@
 
 ### _A real-time AI director that elevates narration from robotic to cinematic._
 
-https://github.com/user-attachments/assets/ba6fe8b1-6d7b-422f-9a4b-d563d921139d
+https://github.com/user-attachments/assets/7af9823f-03ad-4739-b543-cf3272a6449a
 
 ### 📺 [Watch the Full Walkthrough on YouTube](https://www.youtube.com/watch?v=8WW38K6xXhQ)
 ---
@@ -186,6 +186,7 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
 
 
 

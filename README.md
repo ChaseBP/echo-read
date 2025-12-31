@@ -2,7 +2,7 @@
 
 ### _A real-time AI director that elevates narration from robotic to cinematic._
 
-https://github.com/user-attachments/assets/7af9823f-03ad-4739-b543-cf3272a6449a
+https://github.com/user-attachments/assets/6bd9d4a9-5eb9-46de-8a67-908c484ddc50
 
 ### 📺 [Watch the Full Walkthrough on YouTube](https://www.youtube.com/watch?v=8WW38K6xXhQ)
 ---
@@ -52,7 +52,7 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 
 ## 🏗️ System Architecture
 
-<img width="942" height="392" alt="Image" src="https://github.com/user-attachments/assets/ef669a8b-9419-41d5-bdf6-d32fc02e8810" />
+<img width="942" height="392" alt="Image" src="https://github.com/user-attachments/assets/6468984d-975c-40dc-afd4-2b8c81953f94" />
 
 ### The EchoRead Engine
 Unlike simple TTS wrappers, EchoRead uses a multi-stage **orchestration engine** to construct a performance:
@@ -186,6 +186,7 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
 
 
 

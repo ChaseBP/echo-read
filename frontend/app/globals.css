@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #f4efe7;
@@ -12,6 +13,7 @@
   --color-foreground: var(--foreground);
   --color-panel: var(--panel);
   --color-panel-border: var(--panel-border);
+  --font-reading: "Literata", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Baskerville", "Times New Roman", serif;
   --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
 }
@@ -20,10 +22,18 @@ html {
   scroll-behavior: smooth;
 }
 
+html.dark {
+  --background: #171412;
+  --foreground: #efe6dc;
+  --panel: rgba(35, 30, 27, 0.86);
+  --panel-border: rgba(214, 195, 173, 0.16);
+}
+
 body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-reading);
   font-size: 18px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -41,6 +51,11 @@ select {
   color: #2c241d;
 }
 
+html.dark ::selection {
+  background: rgba(214, 195, 173, 0.28);
+  color: #f8efe5;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -50,6 +65,10 @@ select {
   background: rgba(132, 111, 91, 0.08);
 }
 
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(231, 214, 194, 0.08);
+}
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgb(169 138 105), rgb(129 107 88));
   border-radius: 999px;
@@ -57,4 +76,12 @@ select {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgb(188 154 118), rgb(149 124 103));
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgb(141 118 99), rgb(96 78 66));
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgb(171 145 123), rgb(118 96 81));
 }

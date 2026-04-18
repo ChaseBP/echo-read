@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
-import { Literata } from "next/font/google";
 import "./globals.css";
 
-const literata = Literata({ subsets: ["latin"] });
+const themeInitScript = `
+(() => {
+  try {
+    const storedTheme = window.localStorage.getItem("echoread-theme");
+    const theme =
+      storedTheme === "light" || storedTheme === "dark"
+        ? storedTheme
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  } catch {}
+})();
+`;
 
 export const metadata: Metadata = {
   title: "EchoRead | Directed AI Narration",
@@ -25,8 +38,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={literata.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {children}
+      </body>
     </html>
   );
 }

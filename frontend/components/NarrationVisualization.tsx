@@ -55,15 +55,15 @@ export function NarrationVisualization({
   const playheadLeft = `clamp(0px, calc(${playheadProgress}% - 0.1875rem), calc(100% - 0.375rem))`;
 
   return (
-    <div className="rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)]">
+    <div className="rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-stone-700/70 dark:bg-[#231d19]/92 dark:shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
       <div className="mb-4">
-        <div className="text-sm font-medium text-stone-700">Scene map</div>
-        <p className="mt-1 text-sm leading-6 text-stone-500">
+        <div className="text-sm font-medium text-stone-700 dark:text-stone-200">Scene map</div>
+        <p className="mt-1 text-sm leading-6 text-stone-500 dark:text-stone-400">
           Dialogue shifts and narration changes across the current passage.
         </p>
       </div>
 
-      <div className="relative mb-5 h-4 rounded-full bg-stone-200">
+      <div className="relative mb-5 h-4 rounded-full bg-stone-200 dark:bg-stone-700/70">
         {segments.map((segment, index) => (
           <div
             key={`${segment.start}-${segment.end}-${index}`}
@@ -76,7 +76,7 @@ export function NarrationVisualization({
         ))}
 
         <motion.div
-          className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-full bg-stone-900 shadow"
+          className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 rounded-full bg-stone-900 shadow dark:bg-stone-100"
           animate={{ left: playheadLeft, opacity: isPlaying ? 1 : 0.8 }}
           transition={{ duration: 0.12, ease: "linear" }}
         />
@@ -94,8 +94,8 @@ export function NarrationVisualization({
               onClick={() => onSelectSegment?.(segment)}
               className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                 active
-                  ? "border-stone-400 bg-stone-100/80"
-                  : "border-stone-200 bg-white/80 hover:bg-stone-50"
+                  ? "border-stone-400 bg-stone-100/80 dark:border-stone-500 dark:bg-[#312922]"
+                  : "border-stone-200 bg-white/80 hover:bg-stone-50 dark:border-stone-700 dark:bg-[#1a1613] dark:hover:bg-[#26201c]"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -107,17 +107,17 @@ export function NarrationVisualization({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-medium text-stone-800">
+                    <div className="text-sm font-medium text-stone-800 dark:text-stone-100">
                       {ROLE_UI[segment.role].label}
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-stone-500 dark:text-stone-400">
                       {formatTime(segment.start)} to {formatTime(segment.end)}
                     </div>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-stone-600">
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-stone-600 dark:text-stone-300">
                     {segment.text}
                   </p>
-                  <div className="mt-2 text-xs text-stone-500">
+                  <div className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                     {segment.emotion} · intensity {segment.intensity}
                     {segment.audio_tag !== "none" ? ` · ${segment.audio_tag}` : ""}
                   </div>

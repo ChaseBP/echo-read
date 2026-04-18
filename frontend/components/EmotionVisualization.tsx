@@ -28,22 +28,22 @@ export function EmotionVisualization({
   const safeIntensity = Math.min(5, Math.max(1, intensity));
 
   return (
-    <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)]">
+    <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-stone-700/70 dark:bg-[#231d19]/92 dark:shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-sm font-medium text-stone-700">Delivery</div>
-        <span className="text-sm text-stone-600">{config.label}</span>
+        <div className="text-sm font-medium text-stone-700 dark:text-stone-200">Delivery</div>
+        <span className="text-sm text-stone-600 dark:text-stone-300">{config.label}</span>
       </div>
 
       <div className="space-y-4">
         <div>
-          <div className="mb-2 flex items-center justify-between text-sm text-stone-600">
+          <div className="mb-2 flex items-center justify-between text-sm text-stone-600 dark:text-stone-300">
             <span className="inline-flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Emotion
             </span>
             <span>{config.label}</span>
           </div>
-          <div className="h-2 rounded-full bg-stone-200">
+          <div className="h-2 rounded-full bg-stone-200 dark:bg-stone-700/70">
             <motion.div
               className={`h-full rounded-full ${config.accent}`}
               animate={{ width: `${(safeIntensity / 5) * 100}%` }}
@@ -53,7 +53,7 @@ export function EmotionVisualization({
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between text-sm text-stone-600">
+          <div className="mb-2 flex items-center justify-between text-sm text-stone-600 dark:text-stone-300">
             <span className="inline-flex items-center gap-2">
               <Waves className="h-4 w-4" />
               Intensity
@@ -65,7 +65,7 @@ export function EmotionVisualization({
               <div
                 key={index}
                 className={`h-2 flex-1 rounded-full ${
-                  index < safeIntensity ? config.accent : "bg-stone-200"
+                  index < safeIntensity ? config.accent : "bg-stone-200 dark:bg-stone-700/70"
                 }`}
               />
             ))}

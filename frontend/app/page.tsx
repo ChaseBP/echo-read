@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
 import { narrateText } from "@/lib/api";
 import { ComposeMode } from "@/components/ComposeMode";
@@ -19,10 +20,13 @@ import {
 type AppMode = "compose" | "playback";
 
 const STORAGE_KEY = "echoread-studio-state";
+const THEME_STORAGE_KEY = "echoread-theme";
 const DEFAULT_SAMPLE = SAMPLE_STORIES[0];
+type ThemeMode = "light" | "dark";
 
 export default function Page() {
   const [mode, setMode] = useState<AppMode>("compose");
+  const [theme, setTheme] = useState<ThemeMode>("light");
   const [draftText, setDraftText] = useState(DEFAULT_SAMPLE.text);
   const [directionMode, setDirectionMode] =
     useState<DirectionMode>(DEFAULT_SAMPLE.directionMode);
@@ -96,6 +100,10 @@ export default function Page() {
     setErrorMessage(null);
   }
 
+  function toggleTheme() {
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (!saved) {
@@ -124,6 +132,21 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) as
+      | ThemeMode
+      | null;
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+      setTheme(savedTheme);
+      return;
+    }
+
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
+    }
+  }, []);
+
+  useEffect(() => {
     if (!hydratedRef.current) return;
 
     window.localStorage.setItem(
@@ -134,6 +157,11 @@ export default function Page() {
       }),
     );
   }, [directionMode, draftText]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     return () => {
@@ -219,7 +247,25 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f4efe7_0%,#efe8dc_52%,#e6ddcf_100%)] text-foreground">
+    <div className="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f4efe7_0%,#efe8dc_52%,#e6ddcf_100%)] text-foreground transition-colors dark:bg-[linear-gradient(180deg,#181411_0%,#201a17_48%,#14100e_100%)]">
+      <button
+        type="button"
+        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+        onClick={toggleTheme}
+        className="fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-full border border-stone-300/80 bg-[#fffaf2]/90 px-4 py-2 text-sm text-stone-700 shadow-[0_10px_24px_rgba(70,52,34,0.08)] backdrop-blur-sm transition hover:bg-white dark:border-stone-700/80 dark:bg-[#26211d]/92 dark:text-stone-200 dark:hover:bg-[#302924] lg:right-6 lg:top-6"
+      >
+        {theme === "light" ? (
+          <>
+            <Moon className="h-4 w-4" />
+            Dark mode
+          </>
+        ) : (
+          <>
+            <Sun className="h-4 w-4" />
+            Light mode
+          </>
+        )}
+      </button>
       {mode === "compose" ? (
         <ComposeMode
           text={draftText}

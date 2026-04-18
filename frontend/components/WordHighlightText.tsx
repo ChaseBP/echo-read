@@ -1,74 +1,65 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { JSX } from "react";
+import { useMemo } from "react";
 
-export interface WordTimelineItem {
-  word: string;
-  start: number; // seconds
-  end: number; // seconds
-  role: "narrator" | "male_character" | "female_character";
-}
+import { NarrationWordTimelineItem } from "@/lib/narration";
 
 interface Props {
   text: string;
-  words: WordTimelineItem[];
-  currentTime: number; // seconds
+  words: NarrationWordTimelineItem[];
+  currentTime: number;
 }
 
 export function WordHighlightText({ text, words, currentTime }: Props) {
-  const [activeWordIndex, setActiveWordIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    const idx = words.findIndex(
-      (w) => currentTime >= w.start && currentTime < w.end,
+  const activeWordIndex = useMemo(() => {
+    const index = words.findIndex(
+      (word) => currentTime >= word.start && currentTime <= word.end,
     );
-    setActiveWordIndex(idx === -1 ? null : idx);
+
+    return index === -1 ? null : index;
   }, [currentTime, words]);
 
-  /**
-   * Build rendered text as spans
-   * We rebuild ONLY when activeWordIndex changes
-   */
   const rendered = useMemo(() => {
     let cursor = 0;
-    const nodes: JSX.Element[] = [];
+    const nodes: React.ReactNode[] = [];
 
-    words.forEach((w, i) => {
-      const wordStart = text.indexOf(w.word, cursor);
+    words.forEach((word, index) => {
+      const wordStart = text.indexOf(word.word, cursor);
+
       if (wordStart === -1) return;
 
-      // Plain text before word
       if (wordStart > cursor) {
-        nodes.push(<span key={`t-${i}`}>{text.slice(cursor, wordStart)}</span>);
+        nodes.push(
+          <span key={`plain-${index}`}>{text.slice(cursor, wordStart)}</span>,
+        );
       }
 
-      // Word itself
       nodes.push(
         <span
-          key={`w-${i}`}
-          className={`transition-all duration-150 ${i === activeWordIndex
-              ? "bg-indigo-500/30 underline underline-offset-4"
-              : ""
-            }`}
+          key={`word-${index}`}
+          data-word-index={index}
+          className={`rounded px-0.5 transition-all duration-150 ${
+            index === activeWordIndex
+              ? "bg-cyan-400/20 text-white underline underline-offset-4"
+              : "text-slate-300"
+          }`}
         >
-          {w.word}
+          {word.word}
         </span>,
       );
 
-      cursor = wordStart + w.word.length;
+      cursor = wordStart + word.word.length;
     });
 
-    // Remaining text
     if (cursor < text.length) {
       nodes.push(<span key="tail">{text.slice(cursor)}</span>);
     }
 
     return nodes;
-  }, [text, words, activeWordIndex]);
+  }, [activeWordIndex, text, words]);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 leading-relaxed text-lg text-gray-300 whitespace-pre-wrap">
+    <div className="mx-auto max-w-[65ch] rounded-2xl border border-white/10 bg-slate-950/70 p-6 text-[1.125rem] leading-[1.8rem] text-slate-100 whitespace-pre-wrap">
       {rendered}
     </div>
   );

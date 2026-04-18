@@ -1,141 +1,183 @@
-import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Sparkles } from "lucide-react";
+import { BookOpenText, LoaderCircle } from "lucide-react";
+
+import {
+  DIRECTION_OPTIONS,
+  DirectionMode,
+  MAX_STORY_CHARS,
+  SAMPLE_STORIES,
+  SampleStory,
+} from "@/lib/narration";
 
 interface ComposeModeProps {
-  initialText: string;
+  text: string;
+  directionMode: DirectionMode;
   isLoading: boolean;
-  onNarrate: (text: string) => void;
+  loadingStage: string;
+  errorMessage: string | null;
+  onTextChange: (text: string) => void;
+  onDirectionChange: (directionMode: DirectionMode) => void;
+  onUseSample: (sample: SampleStory) => void;
+  onNarrate: () => void;
 }
 
-const SAMPLE_STORY = `The old lighthouse stood against the twilight sky, its beacon dark for the first time in a century.
-
-"We can't let it die," Marcus said, his voice breaking through the silence.
-
-Elena turned to him, her eyes reflecting the dying light. "Some things are meant to end, Marcus. That's just how the world works."
-
-"Not this," he insisted, placing his hand on the cold stone. "Not while I still breathe."
-
-The wind picked up, carrying with it the salt of the sea and the weight of countless stories. They stood there, two souls bound by memory and stubborn hope, refusing to let go of what once was.`;
+function formatMinutes(wordCount: number) {
+  if (!wordCount) return "0m";
+  const minutes = Math.max(1, Math.round(wordCount / 150));
+  return `${minutes}m`;
+}
 
 export function ComposeMode({
-  initialText,
+  text,
+  directionMode,
   isLoading,
+  loadingStage,
+  errorMessage,
+  onTextChange,
+  onDirectionChange,
+  onUseSample,
   onNarrate,
 }: ComposeModeProps) {
-  const [text, setText] = useState(initialText);
-
-  const handleNarrate = () => {
-    if (text.trim() || SAMPLE_STORY) {
-      onNarrate(text.trim() || SAMPLE_STORY);
-    }
-  };
-
-  const handleUseSample = () => {
-    setText(SAMPLE_STORY);
-  };
-
-  useEffect(() => {
-    setText(initialText);
-  }, [initialText]);
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const characterCount = text.length;
+  const selectedDirection = DIRECTION_OPTIONS.find(
+    ({ id }) => id === directionMode,
+  );
+  const canNarrate =
+    text.trim().length > 0 && characterCount <= MAX_STORY_CHARS && !isLoading;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="min-h-screen flex items-center justify-center p-4 lg:p-8"
+      className="px-4 py-6 lg:px-7 lg:py-8"
     >
-      <div className="max-w-4xl w-full space-y-6 lg:space-y-8">
-        {/* Logo and Title */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-center space-y-2 lg:space-y-3"
-        >
-          <div className="flex items-center justify-center gap-2 lg:gap-3">
-            <div className="relative">
-              <Sparkles className="w-8 h-8 lg:w-10 lg:h-10 text-blue-400" />
-              <div className="absolute inset-0 blur-xl bg-blue-400/30 animate-pulse" />
-            </div>
-            <h1 className="text-4xl lg:text-5xl font-serif bg-linear-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-              EchoRead
-            </h1>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="max-w-3xl space-y-3">
+          <div className="text-sm font-medium tracking-[0.08em] text-stone-500">
+            EchoRead
           </div>
-          <p className="text-slate-400 text-base lg:text-lg">
-            Cinematic Multi-Voice AI Narration
+          <h1 className="text-4xl leading-tight text-stone-900 lg:text-6xl">
+            A quieter interface for shaping narrated scenes.
+          </h1>
+          <p className="max-w-2xl text-base leading-7 text-stone-600">
+            Paste a passage, choose the reading style, and generate a
+            performance with voice shifts, emotional direction, and synced text.
           </p>
-        </motion.div>
+        </header>
 
-        {/* Story Input */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="relative"
-        >
-          <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl lg:rounded-3xl blur-2xl" />
+        {errorMessage ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
 
-          <div className="relative bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl lg:rounded-3xl p-1 shadow-2xl">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.28fr)_330px]">
+          <section className="rounded-[28px] border border-stone-300/80 bg-[#fffaf2]/92 p-4 shadow-[0_18px_44px_rgba(70,52,34,0.08)] lg:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-stone-200 bg-[#f8f1e8] px-4 py-3 text-sm text-stone-600">
+              <div className="flex flex-wrap items-center gap-3">
+                <span>{wordCount} words</span>
+                <span>{characterCount}/{MAX_STORY_CHARS} chars</span>
+                <span>{formatMinutes(wordCount)} listen</span>
+              </div>
+              <span>{selectedDirection?.description}</span>
+            </div>
+
             <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste your story here, or use our sample story to experience EchoRead..."
-              className="w-full h-64 lg:h-96 bg-slate-900/70 rounded-2xl lg:rounded-3xl p-6 lg:p-8 text-slate-100 placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-serif leading-relaxed text-sm lg:text-base"
+              onChange={(event) => onTextChange(event.target.value)}
+              placeholder="Paste a scene, chapter excerpt, or dialogue passage."
+              className="mx-auto h-[460px] w-full max-w-[65ch] resize-none rounded-[24px] border border-stone-200 bg-[#fbf7ef] px-5 py-5 text-[1.125rem] leading-[1.8rem] text-stone-800 outline-none transition focus:border-stone-400 lg:h-[560px] lg:px-7 lg:py-6"
             />
-          </div>
-        </motion.div>
 
-        {/* Actions */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 lg:gap-4"
-        >
-          {!text && (
-            <button
-              onClick={handleUseSample}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl lg:rounded-2xl bg-slate-800/50 border border-slate-700/50 text-slate-300 hover:bg-slate-800 hover:border-slate-600 transition-all text-sm lg:text-base"
-            >
-              Use Sample Story
-            </button>
-          )}
+            <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => onUseSample(SAMPLE_STORIES[0])}
+                  className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+                >
+                  Featured sample
+                </button>
+                <button
+                  onClick={() => onTextChange("")}
+                  className="rounded-full border border-stone-300 bg-transparent px-4 py-2 text-sm text-stone-600 transition hover:bg-white/60"
+                >
+                  Clear
+                </button>
+              </div>
 
-          <button
-            onClick={handleNarrate}
-            disabled={isLoading || !text.trim()}
-            className="w-full sm:w-auto group relative px-10 lg:px-12 py-3 lg:py-4 rounded-xl lg:rounded-2xl bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-sm lg:text-base"
-          >
-            <div className="absolute inset-0 bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 rounded-xl lg:rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity animate-pulse" />
-            <span className="relative text-white flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-              {isLoading ? "Narrating..." : "Narrate Story"}
-            </span>
-          </button>
-        </motion.div>
+              <button
+                onClick={onNarrate}
+                disabled={!canNarrate}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-stone-50 transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    {loadingStage}
+                  </>
+                ) : (
+                  "Generate narration"
+                )}
+              </button>
+            </div>
+          </section>
 
-        {/* Feature Hints */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="flex flex-wrap items-center justify-center gap-4 lg:gap-8 text-xs lg:text-sm text-slate-500"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400" />
-            <span>Multi-Voice</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-purple-400" />
-            <span>Dynamic Emotions</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-pink-400" />
-            <span>Real-Time Sync</span>
-          </div>
-        </motion.div>
+          <aside className="space-y-4">
+            <section className="rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/92 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)]">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-stone-700">
+                <BookOpenText className="h-4 w-4" />
+                Direction
+              </div>
+              <div className="space-y-2">
+                {DIRECTION_OPTIONS.map((option) => {
+                  const active = option.id === directionMode;
+
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => onDirectionChange(option.id)}
+                      className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                        active
+                          ? "border-stone-400 bg-stone-100"
+                          : "border-stone-200 bg-white hover:bg-stone-50"
+                      }`}
+                    >
+                      <div className="text-sm font-medium text-stone-800">
+                        {option.label}
+                      </div>
+                      <p className="mt-1 text-sm leading-6 text-stone-600">
+                        {option.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/92 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)]">
+              <div className="mb-3 text-sm font-medium text-stone-700">
+                Sample passages
+              </div>
+              <div className="space-y-2">
+                {SAMPLE_STORIES.map((sample) => (
+                  <button
+                    key={sample.id}
+                    onClick={() => onUseSample(sample)}
+                    className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left transition hover:bg-stone-50"
+                  >
+                    <div className="text-sm font-medium text-stone-800">
+                      {sample.title}
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-stone-600">
+                      {sample.hook}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </motion.div>
   );

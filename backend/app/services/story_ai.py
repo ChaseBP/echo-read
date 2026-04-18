@@ -27,6 +27,34 @@ SUPPORTED_AUDIO_TAGS = [
 
 MODEL_NAME = "gemini-3-flash-preview"
 
+SUPPORTED_ROLES = {"narrator", "male_character", "female_character"}
+SUPPORTED_EMOTIONS = {
+    "calm",
+    "tense",
+    "anxious",
+    "dramatic",
+    "romantic",
+    "relieved",
+    "excited",
+    "sad",
+    "angry",
+}
+SUPPORTED_PACES = {"slow", "medium", "fast"}
+DIRECTION_GUIDANCE = {
+    "cinematic": (
+        "Lean into contrast, pace shifts, and emotional clarity. "
+        "Use higher intensities when a scene clearly earns them."
+    ),
+    "grounded": (
+        "Favor restraint and realism. Keep performances subtle unless the text "
+        "contains unmistakable conflict or urgency."
+    ),
+    "intimate": (
+        "Favor softness, breath, and emotional nuance. Prefer close, vulnerable "
+        "delivery over broad theatrical choices."
+    ),
+}
+
 
 SYSTEM_PROMPT = """
 You are a story performance analysis engine.
@@ -138,7 +166,74 @@ def realign_segments(original_text: str, segments: list[dict]):
     return corrected
 
 
-def analyze_story(text: str):
+def _normalize_analysis(payload: dict) -> dict:
+    global_cfg = payload.get("global", {})
+    dominant_emotion = global_cfg.get("dominant_emotion", "calm")
+    default_pace = global_cfg.get("default_pace", "medium")
+
+    if dominant_emotion not in SUPPORTED_EMOTIONS:
+        dominant_emotion = "calm"
+
+    if default_pace not in SUPPORTED_PACES:
+        default_pace = "medium"
+
+    raw_segments = payload.get("segments", [])
+    if not isinstance(raw_segments, list) or not raw_segments:
+        raise ValueError("Gemini returned no usable segments.")
+
+    normalized_segments = []
+    for segment in raw_segments:
+        if not isinstance(segment, dict):
+            continue
+
+        text = str(segment.get("text", ""))
+        if not text:
+            continue
+
+        role = segment.get("role", "narrator")
+        emotion = segment.get("emotion", dominant_emotion)
+        intensity = segment.get("intensity", 3)
+        audio_tag = segment.get("audio_tag", "none")
+
+        if role not in SUPPORTED_ROLES:
+            role = "narrator"
+
+        if emotion not in SUPPORTED_EMOTIONS:
+            emotion = dominant_emotion
+
+        try:
+            intensity = int(intensity)
+        except (TypeError, ValueError):
+            intensity = 3
+
+        normalized_segments.append(
+            {
+                "text": text,
+                "role": role,
+                "emotion": emotion,
+                "intensity": max(1, min(5, intensity)),
+                "audio_tag": str(audio_tag or "none"),
+            }
+        )
+
+    if not normalized_segments:
+        raise ValueError("Gemini returned empty narration segments.")
+
+    return {
+        "global": {
+            "dominant_emotion": dominant_emotion,
+            "default_pace": default_pace,
+        },
+        "segments": normalized_segments,
+    }
+
+
+def analyze_story(
+    text: str,
+    *,
+    direction_mode: str = "cinematic",
+    reader_feedback: str | None = None,
+):
     """
     Single-pass Gemini analysis.
     Returns a structured performance plan.
@@ -147,8 +242,22 @@ def analyze_story(text: str):
     if not GEMINI_API_KEY:
         raise RuntimeError("Gemini API key missing")
 
+    direction_note = DIRECTION_GUIDANCE.get(
+        direction_mode,
+        DIRECTION_GUIDANCE["cinematic"],
+    )
+    reader_feedback_note = (
+        f"\nReader direction: {reader_feedback.strip()}"
+        if reader_feedback and reader_feedback.strip()
+        else ""
+    )
+
     prompt = f"""
 {SYSTEM_PROMPT}
+
+Performance direction:
+- Mode: {direction_mode}
+- Guidance: {direction_note}{reader_feedback_note}
 
 Text:
 \"\"\"{text}\"\"\"
@@ -167,4 +276,9 @@ Text:
     if start == -1 or end == -1:
         raise ValueError("No JSON found in Gemini response")
 
-    return json.loads(raw[start:end])
+    try:
+        parsed = json.loads(raw[start:end])
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON returned by Gemini: {exc}") from exc
+
+    return _normalize_analysis(parsed)

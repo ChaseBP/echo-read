@@ -1,17 +1,24 @@
 "use client";
 
-import { motion } from "motion/react";
-import { useMemo, useEffect, useRef } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { VoiceRolePanel, VoiceRole } from "./VoiceRolePanel";
-import { EmotionVisualization, Emotion } from "./EmotionVisualization";
-import { AudioControls } from "./AudioControls";
-import { WordTimelineItem } from "./WordHighlightText";
-import { RoleTimelineSegment } from "./NarrationVisualization";
+import { ArrowLeft, Download } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+
+import { AudioControls } from "@/components/AudioControls";
+import { EmotionVisualization } from "@/components/EmotionVisualization";
+import { NarrationVisualization } from "@/components/NarrationVisualization";
+import { VoiceRolePanel } from "@/components/VoiceRolePanel";
+import {
+  NarrationMetadata,
+  NarrationWordTimelineItem,
+  RoleTimelineSegment,
+  VoiceRole,
+} from "@/lib/narration";
 
 interface PlaybackModeProps {
   storyText: string;
-  wordTimeline: WordTimelineItem[];
+  audioUrl: string | null;
+  metadata: NarrationMetadata | null;
+  wordTimeline: NarrationWordTimelineItem[];
   segments: RoleTimelineSegment[];
   currentTime: number;
   progress: number;
@@ -22,8 +29,49 @@ interface PlaybackModeProps {
   onBackToCompose: () => void;
 }
 
+function formatDuration(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function findActiveWordIndex(
+  words: NarrationWordTimelineItem[],
+  currentTime: number,
+) {
+  if (!words.length) return -1;
+
+  let low = 0;
+  let high = words.length - 1;
+  let candidate = -1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (words[mid].start <= currentTime) {
+      candidate = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (candidate === -1) return 0;
+
+  const current = words[candidate];
+  if (currentTime <= current.end) return candidate;
+
+  const next = words[candidate + 1];
+  if (!next) return candidate;
+
+  const midpoint = current.end + (next.start - current.end) / 2;
+  return currentTime <= midpoint ? candidate : candidate + 1;
+}
+
 export function PlaybackMode({
   storyText,
+  audioUrl,
+  metadata,
   wordTimeline,
   segments,
   currentTime,
@@ -36,229 +84,206 @@ export function PlaybackMode({
 }: PlaybackModeProps) {
   const storyViewerRef = useRef<HTMLDivElement>(null);
 
-  /* -------------------- derived state -------------------- */
-
-  const currentWordIndex = useMemo(() => {
-    if (!wordTimeline.length) return -1;
-
-    return wordTimeline.findIndex(
-      (w) => currentTime >= w.start && currentTime <= w.end,
-    );
-  }, [currentTime, wordTimeline]);
-
-  const activeRole: VoiceRole = useMemo(() => {
-    const seg = segments.find(
-      (s) => progress >= s.startProgress && progress <= s.endProgress,
-    );
-    return (seg?.role as VoiceRole) ?? "narrator";
-  }, [segments, progress]);
+  const currentWordIndex = useMemo(
+    () => findActiveWordIndex(wordTimeline, currentTime),
+    [currentTime, wordTimeline],
+  );
 
   const activeSegment = useMemo(() => {
-    return segments.find(
-      (s) => progress >= s.startProgress && progress <= s.endProgress,
+    return (
+      segments.find(
+        (segment) =>
+          currentTime >= segment.start && currentTime <= segment.end + 0.05,
+      ) ?? segments.at(-1)
     );
-  }, [segments, progress]);
+  }, [currentTime, segments]);
 
-  const emotion: Emotion = activeSegment?.emotion ?? "calm";
-  //UI scaling only (1-5) to (20-100)
-  const intensity: number = activeSegment ? activeSegment.intensity * 20 : 20;
+  const activeRole: VoiceRole = activeSegment?.role ?? "narrator";
+  const emotion = activeSegment?.emotion ?? metadata?.dominant_emotion ?? "calm";
+  const intensity = activeSegment?.intensity ?? 1;
 
-  // This rebuilds the text exactly as typed, inserting spans only where needed.
   const renderedText = useMemo(() => {
     let cursor = 0;
     const nodes: React.ReactNode[] = [];
 
-    wordTimeline.forEach((w, i) => {
-      // Find where this word actually sits in the text
-      const wordStart = storyText.indexOf(w.word, cursor);
+    wordTimeline.forEach((word, index) => {
+      const start = Math.max(cursor, Math.min(storyText.length, word.char_start));
+      const end = Math.max(start, Math.min(storyText.length, word.char_end));
 
-      // Safety: If word isn't found (e.g. backend/frontend mismatch), skip
-      if (wordStart === -1) return;
-
-      // 1. Render the plain text BEFORE this word (preserves newlines/spaces)
-      if (wordStart > cursor) {
-        nodes.push(
-          <span key={`plain-${i}`}>{storyText.slice(cursor, wordStart)}</span>,
-        );
+      if (start > cursor) {
+        nodes.push(<span key={`plain-${index}`}>{storyText.slice(cursor, start)}</span>);
       }
 
-      // 2. Render the Highlighted Word
-      const isActive = i === currentWordIndex;
-      nodes.push(
-        <motion.span
-          key={`word-${i}`}
-          id={`word-${i}`} // ID used for scrolling
-          className={`inline-block rounded px-0.5 transition-colors duration-200 ${isActive ? "text-white font-medium relative z-10" : "text-slate-300"
-            }`}
-          animate={{ scale: isActive ? 1.05 : 1 }}
-          transition={{ duration: 0.1 }}
-        >
-          {w.word}
+      const content = storyText.slice(start, end) || word.word;
+      const isActive = index === currentWordIndex;
 
-          {/* The Cinematic Glow Effect */}
-          {isActive && (
-            <motion.span
-              layoutId="highlight-glow"
-              className="absolute inset-0 bg-blue-500/20 rounded blur-sm -z-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-          )}
-          {/* The Underline Effect */}
-          {isActive && (
-            <motion.span
-              className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full"
-              layoutId="highlight-underline"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
-        </motion.span>,
+      nodes.push(
+        <span
+          key={`word-${index}`}
+          data-word-index={index}
+          className={`rounded px-0.5 transition-colors ${
+            isActive
+              ? "bg-amber-100 text-stone-900"
+              : "text-stone-700"
+          }`}
+        >
+          {content}
+        </span>,
       );
 
-      // Move cursor forward
-      cursor = wordStart + w.word.length;
+      cursor = end;
     });
 
-    // 3. Render any remaining text at the end
     if (cursor < storyText.length) {
       nodes.push(<span key="tail">{storyText.slice(cursor)}</span>);
     }
 
     return nodes;
-  }, [storyText, wordTimeline, currentWordIndex]);
-
-  /* -------------------- Auto Scroll  -------------------- */
+  }, [currentWordIndex, storyText, wordTimeline]);
 
   useEffect(() => {
     if (!storyViewerRef.current || currentWordIndex < 0) return;
 
-    const wordElement = storyViewerRef.current.querySelector(
+    const container = storyViewerRef.current;
+    const wordElement = container.querySelector<HTMLElement>(
       `[data-word-index="${currentWordIndex}"]`,
     );
 
-    wordElement?.scrollIntoView({
+    if (!wordElement) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const wordRect = wordElement.getBoundingClientRect();
+    const nextTop =
+      container.scrollTop +
+      (wordRect.top - containerRect.top) -
+      container.clientHeight / 2 +
+      wordRect.height * 2;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
       behavior: "smooth",
-      block: "center",
-      inline: "nearest",
     });
   }, [currentWordIndex]);
 
-  /* -------------------- Role Tint -------------------- */
-
-  function getRoleBackground() {
-    switch (activeRole) {
-      case "male_character":
-        return "bg-purple-500/5";
-      case "female_character":
-        return "bg-pink-500/5";
-      default:
-        return "bg-blue-500/5";
-    }
-  }
-
-  /* -------------------- Render -------------------- */
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="h-screen flex flex-col lg:flex-row overflow-hidden"
-    >
-      {/* Main Content - Story Viewer - ON LEFT SIDE */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="p-4 lg:p-6 border-b border-slate-800/50 backdrop-blur-sm"
-        >
-          <div className="flex items-center justify-between max-w-5xl mx-auto">
-            <button
-              onClick={onBackToCompose}
-              className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors text-sm lg:text-base"
-            >
-              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
-              <span>Back to Compose</span>
-            </button>
-            <div className="flex items-center gap-2 lg:gap-3">
-              <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
-              <h1 className="text-xl lg:text-2xl font-serif bg-linear-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                EchoRead
-              </h1>
-            </div>
-            <div className="w-24 lg:w-32" /> {/* Spacer for centering */}
-          </div>
-        </motion.div>
+    <div className="min-h-screen px-4 py-5 lg:px-7 lg:py-6">
+      <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/90 px-5 py-4 shadow-[0_14px_36px_rgba(70,52,34,0.06)]">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={onBackToCompose}
+                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
 
-        {/* Story Viewer */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex-1 overflow-y-auto px-4 lg:px-6 py-8 lg:py-12"
-        >
-          <div className="max-w-4xl mx-auto">
+              <div className="text-sm text-stone-600">
+                <span className="font-medium text-stone-800">
+                  {metadata?.direction_mode ?? "cinematic"}
+                </span>
+                {" · "}
+                {formatDuration(duration || metadata?.duration_seconds || 0)}
+                {" · "}
+                {Math.round(progress)}%
+              </div>
+            </div>
+
+            {audioUrl ? (
+              <a
+                href={audioUrl}
+                download="echoread-performance.mp3"
+                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+              >
+                <Download className="h-4 w-4" />
+                Download audio
+              </a>
+            ) : null}
+          </div>
+
+          <section className="rounded-[28px] border border-stone-300/80 bg-[#fdf9f2]/96 p-5 shadow-[0_18px_44px_rgba(70,52,34,0.08)] lg:p-8">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4">
+              <div>
+                <div className="text-sm font-medium text-stone-700">
+                  Now reading
+                </div>
+                <h2 className="mt-1 text-2xl text-stone-900">
+                  {activeSegment?.role.replace("_", " ") ?? "Narrator"}
+                </h2>
+              </div>
+
+              <div className="text-sm text-stone-500">
+                {activeSegment?.emotion ?? "calm"} · intensity {intensity}
+                {metadata?.cache_hit ? " · cached render" : ""}
+              </div>
+            </div>
+
             <div
               ref={storyViewerRef}
-              className={`${getRoleBackground()} bg-slate-900/30 backdrop-blur-sm border border-slate-800/30 rounded-2xl lg:rounded-3xl p-6 lg:p-12 transition-colors duration-1000`}
+              className="max-h-[58vh] overflow-y-auto rounded-[22px] border border-stone-200 bg-[#fbf7ef] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] lg:px-8"
             >
-              <div
-                className="prose prose-invert prose-base lg:prose-lg max-w-none whitespace-pre-wrap"
-                style={{ contentVisibility: "auto" }}
-              >
-                <div className="font-serif text-slate-100 leading-relaxed space-y-4 lg:space-y-6">
-                  {renderedText}
-                </div>
+              <div className="mx-auto max-w-[65ch] whitespace-pre-wrap text-[1.125rem] leading-[1.8rem] text-stone-700">
+                {renderedText}
+              </div>
+            </div>
+          </section>
+
+          <NarrationVisualization
+            segments={segments}
+            currentTime={currentTime}
+            duration={duration}
+            isPlaying={isPlaying}
+            onSelectSegment={(segment) => onSeek(segment.start)}
+          />
+        </div>
+
+        <aside className="space-y-4">
+          <AudioControls
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            onPlayPause={onPlayPause}
+            onSeek={onSeek}
+          />
+
+          <VoiceRolePanel activeRole={activeRole} />
+
+          <EmotionVisualization emotion={emotion} intensity={intensity} />
+
+          <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)]">
+            <div className="mb-3 text-sm font-medium text-stone-700">
+              Performance details
+            </div>
+            <div className="space-y-2 text-sm text-stone-600">
+              <div className="flex items-center justify-between">
+                <span>Dominant emotion</span>
+                <span className="text-stone-800">
+                  {metadata?.dominant_emotion ?? emotion}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Default pace</span>
+                <span className="text-stone-800">
+                  {metadata?.default_pace ?? "medium"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Segments</span>
+                <span className="text-stone-800">
+                  {metadata?.segment_count ?? segments.length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Aligned words</span>
+                <span className="text-stone-800">
+                  {metadata?.word_count ?? wordTimeline.length}
+                </span>
               </div>
             </div>
           </div>
-        </motion.div>
+        </aside>
       </div>
-
-      {/* Right Sidebar - Live Narration Panels */}
-      <motion.div
-        initial={{ x: 100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-slate-800/50 bg-slate-950/50 backdrop-blur-sm p-4 lg:p-6 space-y-6 lg:space-y-8 overflow-auto"
-      >
-        {/* Voice Role Panel */}
-        <VoiceRolePanel activeRole={activeRole} />
-
-        {/* Emotion & Intensity */}
-        <EmotionVisualization emotion={emotion} intensity={intensity} />
-
-        {/* Audio Controls */}
-        <AudioControls
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          onPlayPause={onPlayPause}
-          onSeek={onSeek}
-        />
-
-        {/* Info Panel */}
-        <div className="p-4 bg-slate-900/50 rounded-2xl border border-slate-800/30">
-          <h3 className="text-sm text-slate-400 mb-2">Narration Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Words</span>
-              <span className="text-slate-300">{wordTimeline.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Progress</span>
-              <span className="text-slate-300">{Math.round(progress)}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Voice Switches</span>
-              <span className="text-slate-300">Real-time</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+    </div>
   );
 }

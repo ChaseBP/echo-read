@@ -1,76 +1,84 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { narrateText } from "@/lib/api";
-
-import { RoleTimelineSegment } from "@/components/NarrationVisualization";
-
-import { WordTimelineItem } from "@/components/WordHighlightText";
-
 import { ComposeMode } from "@/components/ComposeMode";
 import { PlaybackMode } from "@/components/PlaybackMode";
+import {
+  DirectionMode,
+  NarrationMetadata,
+  NarrationTimelineItem,
+  NarrationWordTimelineItem,
+  normalizeStoryText,
+  RoleTimelineSegment,
+  SAMPLE_STORIES,
+  SampleStory,
+} from "@/lib/narration";
 
 type AppMode = "compose" | "playback";
 
+const STORAGE_KEY = "echoread-studio-state";
+const DEFAULT_SAMPLE = SAMPLE_STORIES[0];
+
 export default function Page() {
-  /* -------------------- core state -------------------- */
-
   const [mode, setMode] = useState<AppMode>("compose");
-
+  const [draftText, setDraftText] = useState(DEFAULT_SAMPLE.text);
+  const [directionMode, setDirectionMode] =
+    useState<DirectionMode>(DEFAULT_SAMPLE.directionMode);
   const [storyText, setStoryText] = useState("");
-
   const [isNarrating, setIsNarrating] = useState(false);
-
+  const [loadingStage, setLoadingStage] = useState("Analyzing scene");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-
   const [progress, setProgress] = useState(0);
-
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-
   const [duration, setDuration] = useState(0);
-
-  const [wordTimeline, setWordTimeline] = useState<WordTimelineItem[]>([]);
-
+  const [wordTimeline, setWordTimeline] = useState<NarrationWordTimelineItem[]>(
+    [],
+  );
   const [currentTime, setCurrentTime] = useState(0);
-
-  /** Timeline used ONLY for visualization */
-
   const [segments, setSegments] = useState<RoleTimelineSegment[]>([]);
+  const [metadata, setMetadata] = useState<NarrationMetadata | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-
-  const rawTimelineRef = useRef<any[]>([]); // backend timeline (seconds)
-
-  /* -------------------- helpers -------------------- */
+  const rawTimelineRef = useRef<NarrationTimelineItem[]>([]);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const shouldAutoplayRef = useRef(false);
+  const hydratedRef = useRef(false);
 
   function togglePlayPause() {
     if (!audioRef.current) return;
 
-    isPlaying ? audioRef.current.pause() : audioRef.current.play();
+    if (isPlaying) {
+      audioRef.current.pause();
+      return;
+    }
+
+    void audioRef.current.play().catch(() => {
+      setIsPlaying(false);
+    });
   }
 
   function handleSeek(time: number) {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = time;
+    audioRef.current.currentTime = Math.max(0, Math.min(duration || time, time));
   }
 
   function buildRoleTimeline(
-    timeline: any[],
-
+    timeline: NarrationTimelineItem[],
     duration: number,
   ): RoleTimelineSegment[] {
     if (!duration) return [];
 
     return timeline.map((seg) => ({
+      ...seg,
       role: seg.role,
-
       emotion: seg.emotion,
-
       intensity: seg.intensity,
-
+      start: seg.start,
+      end: seg.end,
       startProgress: (seg.start / duration) * 100,
-
       endProgress: (seg.end / duration) * 100,
     }));
   }
@@ -82,65 +90,153 @@ export default function Page() {
     setMode("compose");
   }
 
-  /* -------------------- narrate -------------------- */
+  function handleUseSample(sample: SampleStory) {
+    setDraftText(sample.text);
+    setDirectionMode(sample.directionMode);
+    setErrorMessage(null);
+  }
 
-  async function handleNarrate(text: string) {
-    if (!text.trim()) return;
+  useEffect(() => {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      hydratedRef.current = true;
+      return;
+    }
 
     try {
+      const parsed = JSON.parse(saved) as {
+        text?: string;
+        directionMode?: DirectionMode;
+      };
+
+      if (parsed.text) {
+        setDraftText(parsed.text);
+      }
+
+      if (parsed.directionMode) {
+        setDirectionMode(parsed.directionMode);
+      }
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } finally {
+      hydratedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        text: draftText,
+        directionMode,
+      }),
+    );
+  }, [directionMode, draftText]);
+
+  useEffect(() => {
+    return () => {
+      requestControllerRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  async function handleNarrate() {
+    const text = draftText.trim();
+    if (!text) return;
+
+    const normalizedText = normalizeStoryText(text);
+
+    try {
+      requestControllerRef.current?.abort();
+
+      const controller = new AbortController();
+      requestControllerRef.current = controller;
+
       setIsNarrating(true);
-
+      setLoadingStage("Analyzing scene");
+      setErrorMessage(null);
       setIsPlaying(false);
-
       setProgress(0);
-
+      setCurrentTime(0);
+      setDuration(0);
       setAudioUrl(null);
-
       setSegments([]);
+      setWordTimeline([]);
+      setMetadata(null);
+      setStoryText(normalizedText);
 
-      setStoryText(text);
+      const data = await narrateText({
+        text: normalizedText,
+        directionMode,
+        signal: controller.signal,
+      });
 
-      const data = await narrateText(text, false);
+      setLoadingStage("Rendering performance");
 
       const audioBlob = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
-
         { type: "audio/mpeg" },
       );
 
       const url = URL.createObjectURL(audioBlob);
 
       setAudioUrl(url);
-
       rawTimelineRef.current = data.timeline;
-
       setWordTimeline(data.word_timeline);
+      setMetadata(data.metadata);
+      setDuration(data.metadata.duration_seconds);
+      setSegments(
+        buildRoleTimeline(data.timeline, data.metadata.duration_seconds),
+      );
 
       setMode("playback");
+      shouldAutoplayRef.current = true;
+    } catch (error) {
+      if ((error as Error).name === "AbortError") {
+        return;
+      }
 
-      setTimeout(() => {
-        audioRef.current?.play();
-      }, 100);
-    } catch {
-      alert("Narration failed. Try shorter text.");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Narration failed. Try a shorter or cleaner excerpt.";
+
+      setErrorMessage(message);
+      setMode("compose");
     } finally {
       setIsNarrating(false);
+      requestControllerRef.current = null;
     }
   }
 
-  /* -------------------- UI -------------------- */
-
   return (
-    <div className="dark min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-foreground overflow-hidden">
+    <div className="min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f4efe7_0%,#efe8dc_52%,#e6ddcf_100%)] text-foreground">
       {mode === "compose" ? (
         <ComposeMode
-          initialText={storyText}
+          text={draftText}
+          directionMode={directionMode}
           isLoading={isNarrating}
+          loadingStage={loadingStage}
+          errorMessage={errorMessage}
+          onTextChange={setDraftText}
+          onDirectionChange={setDirectionMode}
+          onUseSample={handleUseSample}
           onNarrate={handleNarrate}
         />
       ) : (
         <PlaybackMode
           storyText={storyText}
+          audioUrl={audioUrl}
+          metadata={metadata}
           wordTimeline={wordTimeline}
           segments={segments}
           currentTime={currentTime}
@@ -153,8 +249,6 @@ export default function Page() {
         />
       )}
 
-      {/* Audio element ALWAYS mounted */}
-
       <audio
         ref={audioRef}
         src={audioUrl ?? undefined}
@@ -163,8 +257,16 @@ export default function Page() {
 
           const d = audioRef.current.duration;
           setDuration(d);
+          setSegments(
+            buildRoleTimeline(rawTimelineRef.current, d || metadata?.duration_seconds || 0),
+          );
 
-          setSegments(buildRoleTimeline(rawTimelineRef.current, d));
+          if (shouldAutoplayRef.current) {
+            shouldAutoplayRef.current = false;
+            void audioRef.current.play().catch(() => {
+              setIsPlaying(false);
+            });
+          }
         }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
@@ -179,7 +281,7 @@ export default function Page() {
         }}
         onEnded={() => {
           setIsPlaying(false);
-
+          setCurrentTime(audioRef.current?.duration ?? duration);
           setProgress(100);
         }}
       />

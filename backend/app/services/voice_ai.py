@@ -8,9 +8,9 @@ from elevenlabs.core.api_error import ApiError
 client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
 VOICE_IDS = {
-    "narrator": "BIvP0GN1cAtSRTxNHnWS",  # Jane
-    "male_character": "TX3LPaxmHKxFdv7VOQHJ",  # Liam
-    "female_character": "cgSgspJ2msm6clMCkdW9",  # Jessica
+    "narrator": "SAz9YHcvj6GT2YYXdXww",  # Jane
+    "male_character": "CwhRBWXzGAHq8TQ4Fs17",  # Liam
+    "female_character": "FGY2WhTYpPnrIDTdsKH5",  # Jessica
 }
 
 
@@ -34,21 +34,13 @@ def _tts_with_retry(
                 model_id=model_id,
                 text=text,
                 voice_settings=voice_settings,
-                apply_text_normalization="on",
+                apply_text_normalization="off",
             )
         except ApiError:
             if attempt >= retries:
                 raise
             print(f" ElevenLabs error, retrying ({attempt + 1}/{retries})...")
             time.sleep(delay)
-
-
-def _select_voice_id(config):
-    """
-    Select ElevenLabs voice ID based on narration config.
-    """
-
-    return VOICE_IDS.get(config.speaker_role, VOICE_IDS["narrator"])
 
 
 def _map_voice_settings(config):
@@ -92,6 +84,13 @@ def _map_voice_settings(config):
         settings["style"] = base["style"]
         settings["speed"] = base["speed"]
 
+    pace_adjustment = {
+        "slow": -0.05,
+        "medium": 0.0,
+        "fast": 0.04,
+    }
+    settings["speed"] += pace_adjustment.get(config.pace, 0.0)
+
     # 3. Intensity scaling (ONLY affects style, never stability)
     # intensity -> [1–5]
     intensity_factor = (config.intensity - 1) / 4.0
@@ -118,7 +117,8 @@ def _shape_text(text: str, config):
 
     # Get the audio tag from config
     if getattr(config, "audio_tag", None) not in (None, "none"):
-        return f"[{config.audio_tag}]\n{text}"
+        prefix = f"[{config.audio_tag}]\n"
+        return f"{prefix}{text}"
     return text
 
 
@@ -147,14 +147,27 @@ def synthesize_voice(text: str, narration_config, previous_text=None, next_text=
         voice_settings=voice_settings,
     )
 
-    alignment = response.normalized_alignment
+    alignment = response.alignment or response.normalized_alignment
+    if alignment is None or not alignment.characters:
+        raise ValueError("ElevenLabs returned no alignment data.")
 
-    duration = alignment.character_end_times_seconds[-1]
+    alignment_text = "".join(alignment.characters)
+    alignment_offset = alignment_text.find(text) if text else 0
+    alignment_offset = max(alignment_offset, 0)
+
+    segment_start_time = alignment.character_start_times_seconds[alignment_offset]
+
+    duration = max(
+        alignment.character_end_times_seconds[-1] - segment_start_time,
+        0.0,
+    )
 
     return {
         "audio_bytes": base64.b64decode(response.audio_base_64),
         "duration": duration,
         "role": narration_config.speaker_role,
         "alignment": alignment,
+        "alignment_offset": alignment_offset,
+        "segment_start_time": segment_start_time,
         "text": shaped_text,
     }

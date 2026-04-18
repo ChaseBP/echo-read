@@ -37,6 +37,15 @@ The result is a **full-cast, emotionally directed audio performance** generated 
 
 ---
 
+## ✅ Current Product Upgrades
+
+- **Three direction modes**: `cinematic`, `grounded`, and `intimate` now influence the analysis pass before synthesis.
+- **Persistent writing studio**: the frontend stores the active draft and selected direction mode between sessions.
+- **Richer playback telemetry**: the UI now shows cache hits, direction metadata, segment cards, and a downloadable render.
+- **Harder backend contract**: request validation, bounded caches, environment-based CORS, and clearer API failure messages.
+
+---
+
 ## ✨ Key Differentiators
 
 | Feature | Traditional TTS | EchoRead |
@@ -124,8 +133,20 @@ git clone https://github.com/ChaseBP/echo-read
 *The backend handles the narrative logic (Gemini) and audio synthesis (ElevenLabs).*
 
 **⚠️ Step 1: Configure Environment Variables (Do this first!)**
-1. Look for the `.env.example` file in the main folder and rename it to `.env`
-2. Open `.env` and paste your keys.
+1. Create a root `.env` file for the backend.
+2. Create `frontend/.env.local` for the frontend.
+
+```bash
+# /.env
+GEMINI_API_KEY=your_gemini_key
+ELEVENLABS_API_KEY=your_elevenlabs_key
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CACHE_MAX_ITEMS=24
+MAX_TEXT_CHARS=12000
+
+# /frontend/.env.local
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
 
 ```bash
 # 1. Navigate to the backend directory
@@ -186,6 +207,13 @@ npm run dev
 - [ ] **🎙️ Studio-Grade Export (.WAV)** *Allow authors to compile their narrated stories into single, mastered audio files for podcast or audiobook distribution.*
 
 - [ ] **🔊 Dynamic Soundscapes (SFX Injection)** *Use Gemini to detect scene context (e.g., "It was a stormy night") and automatically layer rain, thunder, or city ambience under the voice track.*
+
+## 🧭 Recommended Next Steps
+
+- **Persist caches outside process memory** using Redis, S3, or a database-backed asset store so restarts do not erase analysis/audio work.
+- **Replace fixed role buckets with character-level casting** so named speakers can keep their own identities across longer chapters.
+- **Add background jobs or streaming synthesis** to avoid long blocking requests on larger passages.
+- **Store projects and renders per user** so authors can iterate on scenes, compare direction modes, and keep reusable libraries.
 
 
 

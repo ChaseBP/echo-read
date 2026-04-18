@@ -22,8 +22,8 @@ export function AudioControls({
   onSeek,
 }: AudioControlsProps) {
   return (
-    <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-stone-700/70 dark:bg-[#231d19]/92 dark:shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
-      <div className="mb-3 text-sm font-medium text-stone-700 dark:text-stone-200">Playback</div>
+    <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-espresso-700/70 dark:bg-espresso-900/90 dark:shadow-[0_12px_30px_rgba(28,22,18,0.35)]">
+      <div className="mb-3 text-sm font-medium text-stone-700 dark:text-espresso-100">Playback</div>
 
       <input
         aria-label="Seek playback"
@@ -36,7 +36,7 @@ export function AudioControls({
         className="w-full accent-amber-700 dark:accent-amber-400"
       />
 
-      <div className="mt-2 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+      <div className="mt-2 flex items-center justify-between text-xs text-stone-500 dark:text-espresso-300">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
@@ -45,7 +45,7 @@ export function AudioControls({
         <button
           aria-label="Skip back 10 seconds"
           onClick={() => onSeek(Math.max(0, currentTime - 10))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-[#2a241f] dark:text-stone-200 dark:hover:bg-[#342d28]"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700 transition hover:bg-stone-50 dark:border-espresso-700 dark:bg-espresso-800 dark:text-espresso-100 dark:hover:bg-espresso-700"
         >
           <SkipBack className="h-4 w-4" />
         </button>
@@ -53,7 +53,7 @@ export function AudioControls({
         <button
           aria-label={isPlaying ? "Pause playback" : "Play playback"}
           onClick={onPlayPause}
-          className="flex h-14 min-w-28 items-center justify-center gap-2 rounded-full bg-stone-900 px-5 text-sm font-medium text-stone-50 transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-200"
+          className="flex h-14 min-w-28 items-center justify-center gap-2 rounded-full bg-stone-900 px-5 text-sm font-medium text-stone-50 transition hover:bg-stone-800 dark:bg-cream dark:text-espresso-900 dark:hover:bg-espresso-100"
         >
           {isPlaying ? (
             <>
@@ -71,13 +71,13 @@ export function AudioControls({
         <button
           aria-label="Skip forward 10 seconds"
           onClick={() => onSeek(Math.min(duration, currentTime + 10))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-[#2a241f] dark:text-stone-200 dark:hover:bg-[#342d28]"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700 transition hover:bg-stone-50 dark:border-espresso-700 dark:bg-espresso-800 dark:text-espresso-100 dark:hover:bg-espresso-700"
         >
           <SkipForward className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+      <div className="mt-4 text-center text-sm text-stone-500 dark:text-espresso-300">
         {isPlaying ? "Playback in progress" : "Paused"}
       </div>
     </div>

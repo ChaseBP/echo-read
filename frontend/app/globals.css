@@ -16,6 +16,20 @@
   --font-reading: "Literata", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Baskerville", "Times New Roman", serif;
   --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  /* Warm Espresso System */
+  --color-espresso-950: #1c1612;
+  --color-espresso-900: #231a12;
+  --color-espresso-800: #2b2016;
+  --color-espresso-700: #33261a;
+  --color-espresso-600: #3d2e1f;
+  --color-espresso-500: #4a3c2e;
+  --color-espresso-400: #5c4a38;
+  --color-espresso-300: #6b5a4a;
+  --color-espresso-200: #947f66;
+  --color-espresso-100: #b89e80;
+  --color-espresso-50: #d4b990;
+  --color-cream: #ead4b2;
 }
 
 html {
@@ -23,17 +37,17 @@ html {
 }
 
 html.dark {
-  --background: #171412;
-  --foreground: #efe6dc;
-  --panel: rgba(35, 30, 27, 0.86);
-  --panel-border: rgba(214, 195, 173, 0.16);
+  --background: #1c1612;
+  --foreground: #ead4b2;
+  --panel: rgba(35, 26, 18, 0.88);
+  --panel-border: rgba(180, 148, 110, 0.15);
 }
 
 body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-reading);
+  font-family: var(--font-sans);
   font-size: 18px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -52,8 +66,8 @@ select {
 }
 
 html.dark ::selection {
-  background: rgba(214, 195, 173, 0.28);
-  color: #f8efe5;
+  background: rgba(169, 138, 105, 0.28);
+  color: #ead4b2;
 }
 
 ::-webkit-scrollbar {
@@ -66,7 +80,7 @@ html.dark ::selection {
 }
 
 html.dark ::-webkit-scrollbar-track {
-  background: rgba(231, 214, 194, 0.08);
+  background: rgba(80, 60, 40, 0.15);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -79,9 +93,10 @@ html.dark ::-webkit-scrollbar-track {
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgb(141 118 99), rgb(96 78 66));
+  background: linear-gradient(180deg, #7a5f44, #5e4833);
+  border-radius: 4px;
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgb(171 145 123), rgb(118 96 81));
+  background: linear-gradient(180deg, #8f7055, #7a5f44);
 }

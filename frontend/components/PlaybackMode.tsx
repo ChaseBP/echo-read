@@ -124,7 +124,7 @@ export function PlaybackMode({
           className={`rounded px-0.5 transition-colors ${
             isActive
               ? "bg-amber-100 text-stone-900 dark:bg-amber-900/60 dark:text-amber-50"
-              : "text-stone-700 dark:text-stone-200"
+              : "text-stone-700 dark:text-espresso-100"
           }`}
         >
           {content}
@@ -169,18 +169,18 @@ export function PlaybackMode({
     <div className="min-h-screen px-4 py-5 lg:px-7 lg:py-6">
       <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/90 px-5 py-4 shadow-[0_14px_36px_rgba(70,52,34,0.06)] dark:border-stone-700/70 dark:bg-[#231d19]/92 dark:shadow-[0_14px_36px_rgba(0,0,0,0.22)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-stone-300/80 bg-[#fffaf2]/90 px-5 py-4 shadow-[0_14px_36px_rgba(70,52,34,0.06)] dark:border-espresso-700/70 dark:bg-espresso-900/90 dark:shadow-[0_14px_36px_rgba(28,22,18,0.35)]">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={onBackToCompose}
-                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-[#2a241f] dark:text-stone-200 dark:hover:bg-[#342d28]"
+                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50 dark:border-espresso-700 dark:bg-espresso-800 dark:text-espresso-100 dark:hover:bg-espresso-700"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </button>
 
-              <div className="text-sm text-stone-600 dark:text-stone-300">
-                <span className="font-medium text-stone-800 dark:text-stone-100">
+              <div className="text-sm text-stone-600 dark:text-espresso-200">
+                <span className="font-medium text-stone-800 dark:text-cream">
                   {metadata?.direction_mode ?? "cinematic"}
                 </span>
                 {" · "}
@@ -194,7 +194,7 @@ export function PlaybackMode({
               <a
                 href={audioUrl}
                 download="echoread-performance.mp3"
-                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-[#2a241f] dark:text-stone-200 dark:hover:bg-[#342d28]"
+                className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50 dark:border-espresso-700 dark:bg-espresso-800 dark:text-espresso-100 dark:hover:bg-espresso-700"
               >
                 <Download className="h-4 w-4" />
                 Download audio
@@ -202,18 +202,18 @@ export function PlaybackMode({
             ) : null}
           </div>
 
-          <section className="rounded-[28px] border border-stone-300/80 bg-[#fdf9f2]/96 p-5 shadow-[0_18px_44px_rgba(70,52,34,0.08)] dark:border-stone-700/70 dark:bg-[#231d19]/96 dark:shadow-[0_18px_44px_rgba(0,0,0,0.26)] lg:p-8">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4 dark:border-stone-700/70">
+          <section className="rounded-[28px] border border-stone-300/80 bg-[#fdf9f2]/96 p-5 shadow-[0_18px_44px_rgba(70,52,34,0.08)] dark:border-espresso-700/70 dark:bg-espresso-900/95 dark:shadow-[0_18px_44px_rgba(28,22,18,0.4)] lg:p-8">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4 dark:border-espresso-700/70">
               <div>
-                <div className="text-sm font-medium text-stone-700 dark:text-stone-200">
+                <div className="text-sm font-medium text-stone-700 dark:text-espresso-100">
                   Now reading
                 </div>
-                <h2 className="mt-1 text-2xl text-stone-900 dark:text-stone-100">
+                <h2 className="mt-1 text-2xl text-stone-900 dark:text-cream">
                   {activeSegment?.role.replace("_", " ") ?? "Narrator"}
                 </h2>
               </div>
 
-              <div className="text-sm text-stone-500 dark:text-stone-400">
+              <div className="text-sm text-stone-500 dark:text-espresso-300">
                 {activeSegment?.emotion ?? "calm"} · intensity {intensity}
                 {metadata?.cache_hit ? " · cached render" : ""}
               </div>
@@ -221,9 +221,9 @@ export function PlaybackMode({
 
             <div
               ref={storyViewerRef}
-              className="max-h-[58vh] overflow-y-auto rounded-[22px] border border-stone-200 bg-[#fbf7ef] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-stone-700/70 dark:bg-[#181411] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] lg:px-8"
+              className="max-h-[58vh] overflow-y-auto rounded-[22px] border border-stone-200 bg-[#fbf7ef] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-espresso-700/70 dark:bg-espresso-950 dark:shadow-[inset_0_1px_0_rgba(234,212,178,0.04)] lg:px-8"
             >
-              <div className="mx-auto max-w-[65ch] whitespace-pre-wrap text-[1.125rem] leading-[1.8rem] text-stone-700 dark:text-stone-200">
+              <div className="mx-auto max-w-[65ch] whitespace-pre-wrap font-reading text-lg leading-[1.75] text-stone-700 dark:text-espresso-100">
                 {renderedText}
               </div>
             </div>
@@ -251,32 +251,32 @@ export function PlaybackMode({
 
           <EmotionVisualization emotion={emotion} intensity={intensity} />
 
-          <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-stone-700/70 dark:bg-[#231d19]/92 dark:shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
-            <div className="mb-3 text-sm font-medium text-stone-700 dark:text-stone-200">
+          <div className="rounded-[22px] border border-stone-300/80 bg-[#fffaf2]/90 p-5 shadow-[0_12px_30px_rgba(70,52,34,0.06)] dark:border-espresso-700/70 dark:bg-espresso-900/90 dark:shadow-[0_12px_30px_rgba(28,22,18,0.35)]">
+            <div className="mb-3 text-sm font-medium text-stone-700 dark:text-espresso-100">
               Performance details
             </div>
-            <div className="space-y-2 text-sm text-stone-600 dark:text-stone-300">
+            <div className="space-y-2 text-sm text-stone-600 dark:text-espresso-200">
               <div className="flex items-center justify-between">
                 <span>Dominant emotion</span>
-                <span className="text-stone-800 dark:text-stone-100">
+                <span className="text-stone-800 dark:text-cream">
                   {metadata?.dominant_emotion ?? emotion}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Default pace</span>
-                <span className="text-stone-800 dark:text-stone-100">
+                <span className="text-stone-800 dark:text-cream">
                   {metadata?.default_pace ?? "medium"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Segments</span>
-                <span className="text-stone-800 dark:text-stone-100">
+                <span className="text-stone-800 dark:text-cream">
                   {metadata?.segment_count ?? segments.length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Aligned words</span>
-                <span className="text-stone-800 dark:text-stone-100">
+                <span className="text-stone-800 dark:text-cream">
                   {metadata?.word_count ?? wordTimeline.length}
                 </span>
               </div>

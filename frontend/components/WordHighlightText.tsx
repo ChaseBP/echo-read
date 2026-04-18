@@ -59,7 +59,7 @@ export function WordHighlightText({ text, words, currentTime }: Props) {
   }, [activeWordIndex, text, words]);
 
   return (
-    <div className="mx-auto max-w-[65ch] rounded-2xl border border-white/10 bg-slate-950/70 p-6 text-[1.125rem] leading-[1.8rem] text-slate-100 whitespace-pre-wrap">
+    <div className="mx-auto max-w-[65ch] rounded-2xl border border-white/10 bg-slate-950/70 p-6 font-reading text-lg leading-[1.75] text-slate-100 whitespace-pre-wrap">
       {rendered}
     </div>
   );

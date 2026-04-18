@@ -1,5 +1,19 @@
 import type { Metadata } from "next";
+import { Atkinson_Hyperlegible, Literata } from "next/font/google";
 import "./globals.css";
+
+const literata = Literata({
+  subsets: ["latin"],
+  variable: "--font-literata",
+  display: "swap",
+});
+
+const atkinson = Atkinson_Hyperlegible({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-atkinson",
+  display: "swap",
+});
 
 const themeInitScript = `
 (() => {
@@ -38,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${literata.variable} ${atkinson.variable}`} suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
